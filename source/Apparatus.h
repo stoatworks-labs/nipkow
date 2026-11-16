@@ -104,6 +104,7 @@ struct ChainHooks
 	bool phaseNotTimesN    = false;///< the receiver's phase advanced by psi, not N psi
 	bool fixedFrameStep    = false;///< the disc advanced by 1/60 s a frame, whatever the frame
 	bool strikeResetEachFrame = false;///< the strike's progress forgotten at every frame
+	bool noSync            = false;///< not a fault: the harness's reference picture, the sync's samples carrying the picture
 };
 
 /// What the controls ask of the chain.
@@ -122,10 +123,10 @@ struct ChainSettings
 /// One processed sample, as the display pass reads it.
 struct Sample
 {
-	float u;     ///< the receiver's scan phase at the sample's start, lines (see Frame::phaseBase)
+	float u;     ///< the receiver's scan phase at the sample's start, lines (reduced to one picture, 0..N)
 	float light; ///< the lamp's light per unit area x its lit fraction x the persistence weight, mA
 	float glow;  ///< the fraction of the plate glowing (1 at or above kCoverCurrent)
-	float spare;
+	float uRest; ///< u less the float u, so u = u + uRest to double precision
 };
 
 /// A frame's worth of the chain's output.

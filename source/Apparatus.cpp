@@ -172,7 +172,7 @@ void RunFrame( ChainState& s, const ChainSettings& settings, const float* table,
 		const int j  = static_cast< int >( s.cell % M );
 		const int kt = static_cast< int >( s.cell / M );
 		double x     = 0.0;
-		if( j < M - kSyncSamples && table != nullptr )
+		if( ( j < M - kSyncSamples || hooks.noSync ) && table != nullptr )
 			x = std::max( 0.0, static_cast< double >( table[ static_cast< size_t >( kt ) * M + j ] ) );
 
 		//The amplifier, exact for the held input; the lamp sees the average.
@@ -222,7 +222,7 @@ void RunFrame( ChainState& s, const ChainSettings& settings, const float* table,
 		Sample& o = out.samples[ static_cast< size_t >( i ) ];
 		o.glow    = 1.0f;
 		o.light   = 0.0f;
-		o.spare   = 0.0f;
+		o.uRest   = 0.0f;
 		if( litFraction > 0.0 )
 		{
 			const double light = hooks.lightSquare ? I * I / kReferenceCurrent : I;
@@ -258,6 +258,7 @@ void RunFrame( ChainState& s, const ChainSettings& settings, const float* table,
 		u        = std::max( u, lastU );
 		lastU    = u;
 		o.u      = static_cast< float >( u );
+		o.uRest  = static_cast< float >( u - static_cast< double >( o.u ) );
 
 		//The phonic wheel, a semi-implicit Euler step.
 		switch( settings.sync )
@@ -298,7 +299,7 @@ void RunFrame( ChainState& s, const ChainSettings& settings, const float* table,
 		o.u       = static_cast< float >( u );
 		o.light   = 0.0f;
 		o.glow    = 1.0f;
-		o.spare   = 0.0f;
+		o.uRest   = static_cast< float >( u - static_cast< double >( o.u ) );
 	}
 	if( settings.sync == 0 )
 	{

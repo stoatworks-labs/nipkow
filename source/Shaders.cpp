@@ -108,7 +108,7 @@ void main()
 /// of the band falls in the frame adds. A lamp below its covering current
 /// glows on the centred part of the plate, sqrt( glow ) of the field each way.
 const char* const kExposureFragment = R"(
-uniform sampler2D Samples;// r u, g light, b glow; sample i at ( i & 4095, i >> 12 )
+uniform sampler2D Samples;// r u, g light, b glow, a u's remainder; sample i at ( i & 4095, i >> 12 )
 uniform sampler2D Previous;
 uniform int Count;
 uniform float FirstU;
@@ -164,9 +164,13 @@ void main()
 	float hr        = 0.5 * wr;
 	float hphi      = 0.5 * wt / r;
 	float halfField = 0.5 * Phi;
-	float lo        = max( phi - hphi, -halfField );
-	float hi        = min( phi + hphi, halfField );
-	if( hi <= lo || Count <= 0 )
+	// The window relative to the pixel's angle: phi ~ 0.1 rounds to 7e-9,
+	// 5e-5 of hphi, and phi + hphi less phi - hphi would carry it.
+	float wlo = max( -hphi, -halfField - phi );
+	float whi = min( hphi, halfField - phi );
+	float lo  = phi + wlo;
+	float hi  = phi + whi;
+	if( whi <= wlo || Count <= 0 )
 	{
 		FragColor = vec4( previous, 0.0, 0.0, 0.0 );
 		return;
@@ -183,9 +187,12 @@ void main()
 	float sum = 0.0;
 	for( int k = k0; k <= k1; ++k )
 	{
+		// Radii relative to the hole's: at r ~ 350 a float resolves 3e-5,
+		// and r + hr less r - hr would round 2 hr the same way at every pixel.
 		float rk  = Rc + HoleSpacing * ( 0.5 * ( n - 1.0 ) - float( k ) );
-		float rlo = max( r - hr, rk - 0.5 );
-		float rhi = min( r + hr, rk + 0.5 );
+		precise float rel = r - rk;
+		precise float rlo = max( rel - hr, -0.5 );
+		precise float rhi = min( rel + hr, 0.5 );
 		if( rhi <= rlo )
 			continue;
 		float a   = HoleWidthModel == 1 ? 0.5 / Rc : 0.5 / rk;
@@ -220,24 +227,34 @@ void main()
 				vec4 next = sampleAt( i + 1 );
 				if( here.g > 0.0 && next.r > here.r )
 				{
-					float clo = lo;
-					float chi = hi;
+					float clo = wlo;
+					float chi = whi;
 					float rl  = rlo;
 					float rh  = rhi;
 					if( here.b < 1.0 )
 					{
 						float q = sqrt( max( here.b, 0.0 ) );
-						clo     = max( clo, -q * halfField );
-						chi     = min( chi, q * halfField );
-						rl      = max( rl, Rc - q * 0.5 * n );
-						rh      = min( rh, Rc + q * 0.5 * n );
+						clo     = max( clo, -q * halfField - phi );
+						chi     = min( chi, q * halfField - phi );
+						rl      = max( rl, Rc - rk - q * 0.5 * n );
+						rh      = min( rh, Rc - rk + q * 0.5 * n );
 					}
 					if( chi > clo && rh > rl )
 					{
-						float mid  = 0.5 * ( clo + chi );
+						float mid  = phi + 0.5 * ( clo + chi );
 						float L    = 0.5 * ( chi - clo );
-						float pa   = ( here.r - start ) * Phi - mid;
-						float pb   = ( next.r - start ) * Phi - mid;
+						// u in two floats: near the hole's start the difference
+						// is exact, and the remainder carries what a float of
+						// u ~ 30 drops (2e-6 of a line, 5e-4 of a sample).
+						// precise: Apple's compiler otherwise reassociates
+						// ( u - start ) + rest into ( u + rest ) - start and
+						// the remainder is lost.
+						precise float da = here.r - start;
+						precise float db = next.r - start;
+						precise float ua = da + here.a;
+						precise float ub = db + next.a;
+						float pa   = ua * Phi - mid;
+						float pb   = ub * Phi - mid;
 						float over = swept( pb, a, L ) - swept( pa, a, L );
 						got += here.g * ( rh - rl ) * over / ( pb - pa );
 					}
