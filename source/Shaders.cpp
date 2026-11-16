@@ -146,6 +146,21 @@ float swept( float x, float a, float L )
 	return ramp( x + a + L, a ) - ramp( x + a - L, a );
 }
 
+// The angle of ( X, Y ), X > 0, to a float's precision over the field:
+// Apple's software renderer's atan is off by up to 6e-6 rad, 3e-5 of the
+// field's half-angle. Half the angle, t = tan( phi / 2 ) = Y / ( r + X ), and
+// atan's series to t^11 (|t| < 0.25 covers the widest field, pi / 8 either
+// side; the first term left out, t^13 / 13, is 1e-9). Beyond that the pixel
+// is outside the field and the built-in serves.
+float angleOf( float X, float Y, float r )
+{
+	float t = Y / ( r + X );
+	if( X <= 0.0 || abs( t ) >= 0.25 )
+		return atan( Y, X );
+	float q = t * t;
+	return 2.0 * t * ( 1.0 + q * ( -1.0 / 3.0 + q * ( 1.0 / 5.0 + q * ( -1.0 / 7.0 + q * ( 1.0 / 9.0 - q / 11.0 ) ) ) ) );
+}
+
 void main()
 {
 	ivec2 at       = ivec2( gl_FragCoord.xy );
@@ -154,7 +169,7 @@ void main()
 	float X        = Rc + d.x;
 	float Y        = d.y;
 	float r        = sqrt( X * X + Y * Y );
-	float phi      = atan( Y, X );
+	float phi      = angleOf( X, Y, r );
 	float n        = float( Lines );
 	float c        = X / r;
 	float s        = Y / r;

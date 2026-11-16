@@ -28,6 +28,8 @@ struct PluginHooks
 	bool premultiply   = true; ///< false: the clip's light not weighted by its alpha
 	bool whiteScreen   = false;///< the lamp drawn in white, not the neon's colour
 	bool resizeResets  = false;///< a new raster clears the exposure
+	bool resizeWheel   = false;///< a new raster restarts the phonic wheel at the framing
+	bool resizeLamp    = false;///< a new raster puts the lamp out
 	bool floatClock    = false;///< the host's clock read in single precision
 	bool leakGLState   = false;///< the host's GL state not put back
 };

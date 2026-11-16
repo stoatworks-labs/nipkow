@@ -703,14 +703,9 @@ void printStats( const Rig& rig, int index )
 {
 	const apparatus::ChainState& c = rig.Chain();
 	const apparatus::FrameOut& f   = rig.plugin.LastFrame();
-	double light = 0.0, lit = 0.0;
-	for( int i = 0; i < f.count; ++i )
-	{
-		light += f.samples[ static_cast< size_t >( i ) ].light;
-		lit += f.samples[ static_cast< size_t >( i ) ].light > 0.0f ? 1.0 : 0.0;
-	}
 	std::fprintf( stderr, "frame %d samples %d lit %.9g current %.9g pull %.9g psi %.9g psidot %.9g strikes %lld\n", index, f.count,
-	              f.count > 0 ? lit / f.count : 0.0, c.lastCurrent, c.pull, c.psi, c.psiDot, static_cast< long long >( c.strikes ) );
+	              f.pictureSamples > 0 ? static_cast< double >( f.pictureLit ) / f.pictureSamples : 0.0, c.lastCurrent,
+	              f.pullLines > 0 ? f.pullSum / f.pullLines : c.pull, c.psi, c.psiDot, static_cast< long long >( c.strikes ) );
 }
 
 int runPipe( int width, int height, double fps, const std::string& scriptPath, int count, bool readStdin, const std::vector< std::string >& settings )
@@ -853,7 +848,8 @@ int main( int argc, char** argv )
 			             "  --pipe            raw RGBA frames in on stdin, out on stdout\n"
 			             "  --film N          N frames, raw RGBA on stdout\n"
 			             "  --script PATH     cues for --pipe/--film: 'frame Name value'\n"
-			             "  --stats           (with --pipe/--film) the lamp's current, the lit share, the wheel's pull and phase a frame, on stderr\n\n"
+			             "  --stats           (with --pipe/--film) a line a frame on stderr: the lit share of the picture's samples, the lamp's\n"
+			             "                    last current (mA), the mean pull C of the lines the frame ended (mA^2), psi, psi', strikes\n\n"
 			             "  --all             every check below, at 1280x720 and 320x180 (--size: that raster alone)\n"
 			             "  --negative        each check against the wrong models it must catch\n"
 			             "  --bench           GPU and CPU ms a frame at 720p, 1080p and 4K\n"

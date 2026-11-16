@@ -137,6 +137,12 @@ struct FrameOut
 	double sampleSeconds = 0.0;   ///< one sample's duration
 	double decay         = 1.0;   ///< e^( -count x sampleSeconds / persistence )
 	double covered       = 0.0;   ///< count x sampleSeconds
+	int samplesLine      = 0;     ///< M
+	int64_t firstCell    = 0;     ///< the transmitter's cell (within the picture) of the frame's first sample
+	int pictureSamples   = 0;     ///< samples outside the sync this frame
+	int pictureLit       = 0;     ///< of those, the ones the lamp was lit for (any part of)
+	double pullSum       = 0.0;   ///< the sum of C over the lines that ended this frame, mA^2
+	int pullLines        = 0;     ///< how many
 };
 
 /// The chain's state, carried from frame to frame.

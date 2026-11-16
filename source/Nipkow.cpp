@@ -279,7 +279,21 @@ bool NipkowPlugin::render( const FFGLTextureStruct* input, const GLint* hostView
 	glBindFramebuffer( GL_READ_FRAMEBUFFER, tableBuffer.GetGLID() );
 	glReadPixels( 0, 0, M, N, GL_RED, GL_FLOAT, table.data() );
 
-	//2. The amplifier, the lamp and the wheel.
+	//2. The amplifier, the lamp and the wheel. Nothing in the chain depends
+	//on the raster: a resize carries it on as it was.
+	if( exposureWidth > 0 && ( exposureWidth != width || exposureHeight != height ) )
+	{
+		if( hooks.resizeWheel )
+		{
+			chain.psi    = settings.framing / N;
+			chain.psiDot = 0.0;
+		}
+		if( hooks.resizeLamp )
+		{
+			chain.lit    = false;
+			chain.strike = 0.0;
+		}
+	}
 	apparatus::RunFrame( chain, settings, table.data(), static_cast< double >( micros ) * 1e-6, hooks.chain, frameOut );
 
 	//3. The samples, uploaded.

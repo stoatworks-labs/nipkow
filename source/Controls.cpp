@@ -52,11 +52,14 @@ ControlInfo option( unsigned int id, const char* name, const char* group, int va
 // p. 731) and its 9 kc/s channel (the Televisor's Instructions; Moseley and
 // Barton Chapple p. 95). The Lamp's standing current is set from Resolume's
 // 33 demo clips through --pipe (tools/clips.py defaults): the lowest current,
-// in whole milliamps, at which the median clip keeps the lamp lit over 99% of
-// its picture. Speed +0.5% is chosen: a motor set close by hand, not exactly.
-// Persistence 0.1 s is chosen for the look: about one picture.
+// up to the next 0.1 mA, at which the median clip keeps the lamp lit over 99%
+// of its picture's samples. Measured 2026-11-16: 9.92 to 10.001 mA over the 33
+// clips (at least 1% of every clip's strip is black, and black is lit only
+// above I_s = 10 mA), the median 10.001 mA -> 10.1 mA. Speed +0.5% is chosen:
+// a motor set close by hand, not exactly. Persistence 0.1 s is chosen for the
+// look: about one picture.
 //---------------------------------------------------------------------------
-const double kDefaultLamp = 12.0;
+const double kDefaultLamp = 10.1;
 
 namespace
 {

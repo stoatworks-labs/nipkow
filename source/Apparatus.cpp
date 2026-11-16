@@ -8,8 +8,10 @@ namespace nipkow::apparatus
 {
 
 /// Set from Resolume's demo clips (tools/clips.py defaults): the median
-/// clip's mean C over its picture at the default Lamp, mA^2.
-const double kReferencePull = 60.0;
+/// clip's mean C over its picture at the default Lamp, mA^2. Measured
+/// 2026-11-16 at 10.1 mA: 0.00 to 29.3 mA^2 over the 33 clips (the Baird
+/// frame's strip is black in eight of them), the median clip Ethnik2 0.91.
+const double kReferencePull = 0.9;
 
 double HoleAngle( int lines )
 {
@@ -114,6 +116,9 @@ void RunFrame( ChainState& s, const ChainSettings& settings, const float* table,
 		s.lines      = N;
 		s.samplesLine = M;
 		s.amp        = table ? std::max( 0.0, static_cast< double >( table[ 0 ] ) ) : 0.0;
+		//The lamp was switched on with its standing current before the
+		//picture came: lit if that alone strikes it.
+		s.lit        = settings.lampMa > kStrikeCurrent;
 		s.psi        = settings.framing / N;
 		s.psiDot     = settings.sync == 0 ? 0.0 : nuFree;
 		s.perSecond  = perSecond;
@@ -147,6 +152,12 @@ void RunFrame( ChainState& s, const ChainSettings& settings, const float* table,
 	out.sampleSeconds = dt;
 	out.covered       = count * dt;
 	out.decay         = std::exp( -out.covered / settings.persistence );
+	out.samplesLine    = M;
+	out.firstCell      = s.cell;
+	out.pictureSamples = 0;
+	out.pictureLit     = 0;
+	out.pullSum        = 0.0;
+	out.pullLines      = 0;
 	out.samples.resize( static_cast< size_t >( count ) + 1 );
 
 	const double tau   = hooks.tauScale / ( 2.0 * kPi * settings.bandwidth );
@@ -238,6 +249,8 @@ void RunFrame( ChainState& s, const ChainSettings& settings, const float* table,
 		{
 			s.lineSq += square;
 			++s.lineN;
+			++out.pictureSamples;
+			out.pictureLit += litFraction > 0.0 ? 1 : 0;
 		}
 		else
 		{
@@ -247,7 +260,11 @@ void RunFrame( ChainState& s, const ChainSettings& settings, const float* table,
 		if( j == M - 1 )
 		{
 			if( s.lineN > 0 && s.syncN > 0 )
+			{
 				s.pull = std::max( 0.0, s.lineSq / s.lineN - s.syncSq / s.syncN );
+				out.pullSum += s.pull;
+				++out.pullLines;
+			}
 			s.lineSq = s.syncSq = 0.0;
 			s.lineN = s.syncN = 0;
 		}

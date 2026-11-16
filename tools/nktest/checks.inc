@@ -641,7 +641,10 @@ int runBandwidth( const Perturb& perturb )
 			//of the two gives tau1 - tau2.
 			const double dtau  = diff / ( 2.0 * hSwing * level * w );
 			const double angle = omega * dtau;
-			worstAngle         = worse( worstAngle, mag( dtau / ( tau1 - tau2 ) - 1.0 ) );
+			//The light withheld after the edge is weighted by the persistence
+			//at its own time, e^( t / tau_p ) later: tau / ( 1 - tau / tau_p ).
+			const double eff   = tau1 / ( 1.0 - tau1 / tauP ) - tau2 / ( 1.0 - tau2 / tauP );
+			worstAngle         = worse( worstAngle, mag( dtau / eff - 1.0 ) );
 			minArc             = std::min( minArc, rk * angle );
 			maxArc             = std::max( maxArc, rk * angle );
 			if( k == 0 || k == n - 2 )
@@ -650,7 +653,8 @@ int runBandwidth( const Perturb& perturb )
 		//The tolerance: 2e-4. A pixel's exposure is good to 1e-5 (--dwell's
 		//bound), and the window holds 0.45 of a line of white, 17 times the
 		//0.027 of a line the edge moves: 1.7e-4. The 2 kHz edge's residue
-		//at the window's top is e^-15.
+		//at the window's top is e^-15. (The withheld light's weight, 8e-5
+		//above the edge's at 2 kHz, is in the expectation.)
 		Check( worstAngle <= 2e-4 && maxArc > minArc,
 		       fmt( "%4dx%-4d edge moved by omega ( tau1 - tau2 ) = %.6f rad: worst line %.2e off (tolerance 2e-4);%s arcs %.4f..%.4f holes", raster.w,
 		            raster.h, omega * ( tau1 - tau2 ), worstAngle, lines.c_str(), minArc, maxArc ) );
@@ -1454,13 +1458,13 @@ int runResize( const Perturb& perturb )
 {
 	std::printf( "\n=== resize: 1280x720 -> 320x180 mid-run, the lamp striking every line and the wheel hunting: the chain carries on as in a run\n"
 	             "    never resized, and the screen's exposure is carried over by area\n" );
-	//A clip constant on 4x4 blocks: the transmitter sees the same picture
-	//at both rasters.
-	Floats small = buildCard( 320, 180 ), big( static_cast< size_t >( 1280 ) * 720 * 4 );
-	for( int y = 0; y < 720; ++y )
-		for( int x = 0; x < 1280; ++x )
-			for( int c = 0; c < 4; ++c )
-				big[ ( static_cast< size_t >( y ) * 1280 + x ) * 4 + c ] = small[ ( static_cast< size_t >( y / 4 ) * 320 + x / 4 ) * 4 + c ];
+	//A flat mid-grey: the transmitter sees the same picture at both rasters,
+	//and every line pulls the wheel alike. (The card's lines pull it from 4
+	//to 37 mA^2, a modulation that repeats at the picture rate, 12.5 Hz,
+	//twice the wheel's own frequency at that pull: a parametric resonance,
+	//and the wheel never settles. Two runs whose tables differ in float
+	//rounding then part exponentially, 1e-7 to 3e-3 rev in 75 frames.)
+	const Floats small = grey( 320, 180, 0.5 ), big = grey( 1280, 720, 0.5 );
 	Rig moved, kept, native;
 	if( !startRig( moved, 1280, 720, perturb, &big ) || !startRig( kept, 1280, 720, perturb, &big ) || !startRig( native, 320, 180, perturb, &small ) )
 		return 1;
@@ -1485,30 +1489,50 @@ int runResize( const Perturb& perturb )
 		return s;
 	};
 	const double lightMoved = total( moved.Exposure(), 16.0 ), lightNative = total( native.Exposure(), 16.0 ), lightKept = total( kept.Exposure(), 1.0 );
-	double worstPsi = 0.0;
+	//The wheel's swing about its lock at the resize, read off the run kept
+	//at 1280x720 over the 30 frames after it (psi's extremes either way).
+	double worstPsi = 0.0, pullApart = 0.0, swingLo = 1.0, swingHi = -1.0, pull = 0.0;
 	int lampWrong   = 0;
+	auto apart      = []( double p, double q ) {
+        double d = p - q;
+        return mag( d - std::round( d ) );
+	};
+	auto centred = []( double p ) { return p - std::round( p ); };
+	const double framing = 0.0;// the default Framing: the lock is near psi = 0
 	for( int f = 0; f < 30; ++f )
 	{
-		const apparatus::ChainState &a = moved.Chain(), &b = kept.Chain();
-		double d = a.psi - b.psi;
-		d -= std::round( d );
-		worstPsi = worse( worstPsi, mag( d ) );
-		lampWrong += a.lit != b.lit || a.strikes != b.strikes || a.samples != b.samples;
-		if( !moved.Render( 1 ) || !kept.Render( 1 ) )
+		if( !moved.Render( 1 ) || !kept.Render( 1 ) || !native.Render( 1 ) )
 			return 1;
+		const apparatus::ChainState &a = moved.Chain(), &b = kept.Chain();
+		worstPsi  = worse( worstPsi, apart( a.psi, b.psi ) );
+		pullApart = worse( pullApart, mag( a.pull / b.pull - 1.0 ) );
+		swingLo   = std::min( swingLo, centred( b.psi - framing ) );
+		swingHi   = std::max( swingHi, centred( b.psi - framing ) );
+		pull      = b.pull;
+		lampWrong += a.lit != b.lit || a.strikes != b.strikes || a.samples != b.samples;
 	}
 	//Tolerances. The light on the screen: 1e-4 -- area resampling
 	//conserves it, each raster's light is good to 1e-5 a pixel (--dwell's
 	//bound) and its field's light to the same, and the lattices tile the
-	//field's edges differently. The wheel: 1e-7 rev -- the two rasters'
-	//transmitter sums of the same picture differ in float (1e-7) and the
-	//wheel's pull integrates it. The lamp and the samples: exact.
+	//field's edges differently. The wheel: after the resize the table is
+	//summed over the other raster's pixels, and the pull differs by float
+	//rounding, delta (read off the two runs' own pulls). A pull delta
+	//stronger moves the hunt's frequency by delta / 2 and its centre by up
+	//to delta of the swing A (psi's extent over the 30 frames), so over t
+	//the runs part by at most A delta ( omega t / 2 + 1 ); the tolerance is
+	//twice that. A wheel restarted at the framing is A away at once. The
+	//lamp and the samples: exact.
 	const double lightErr = lightMoved / lightNative - 1.0;
-	Check( mag( lightErr ) <= 1e-4 && worstPsi <= 1e-7 && lampWrong == 0 && before.strikes > 100,
+	const double swing    = swingHi - swingLo;
+	const double omega    = 2.0 * hPi * hHunt * std::sqrt( pull / apparatus::kReferencePull );
+	const double t        = 30.0 / kept.fps;
+	const double psiTol   = 2.0 * swing * pullApart * ( 0.5 * omega * t + 1.0 ) + 1e-12;
+	Check( mag( lightErr ) <= 1e-4 && worstPsi <= psiTol && lampWrong == 0 && before.strikes > 100 && swing > 1e-4,
 	       fmt( "the frame after the resize: the screen's light %.6g (resized) against %.6g (320x180 throughout), %+.2e (tolerance 1e-4; 1280x720 kept: "
-	            "%.6g); 30 frames on, the wheel %.1e rev from the run kept at 1280x720 (tolerance 1e-7), the lamp and the samples %d frames off (exact); "
-	            "%lld strikes before",
-	            lightMoved, lightNative, lightErr, lightKept, worstPsi, lampWrong, static_cast< long long >( before.strikes ) ) );
+	            "%.6g); 30 frames on, the wheel %.1e rev from the run kept at 1280x720 (tolerance %.1e: its swing %.2e rev, the pulls %.1e apart, "
+	            "omega %.1f rad/s over %.2f s), the lamp and the samples %d frames off (exact); %lld strikes before",
+	            lightMoved, lightNative, lightErr, lightKept, worstPsi, psiTol, swing, pullApart, omega, t, lampWrong,
+	            static_cast< long long >( before.strikes ) ) );
 	return Verdict();
 }
 
@@ -1851,6 +1875,8 @@ int runNegative( bool offlineOnly = false )
 	add( "alpha", runAlpha, "the clip's alpha passed through", []( Perturb& p ) { p.alphaModel = 1; } );
 	add( "alpha", runAlpha, "the clip's light not weighted by its alpha", []( Perturb& p ) { p.premultiply = false; } );
 	add( "resize", runResize, "a new raster clears the exposure", []( Perturb& p ) { p.resizeResets = true; } );
+	add( "resize", runResize, "a new raster restarts the wheel at the framing", []( Perturb& p ) { p.resizeWheel = true; } );
+	add( "resize", runResize, "a new raster puts the lamp out", []( Perturb& p ) { p.resizeLamp = true; } );
 	add( "clock", runClock, "the host's clock read in single precision", []( Perturb& p ) { p.floatClock = true; } );
 	add( "glstate", runGLState, "the host's GL state not put back", []( Perturb& p ) { p.leakGLState = true; } );
 
