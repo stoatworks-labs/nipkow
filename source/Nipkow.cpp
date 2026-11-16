@@ -231,7 +231,10 @@ View NipkowPlugin::computeView( int width, int height, int lines, int frameMode 
 	}
 	v.centreX      = 0.5 * width;
 	v.centreY      = 0.5 * height;
-	v.displayScale = apparatus::kPi * v.rc / ( PersistenceFromParam( params[ PT_PERSISTENCE ] ) * apparatus::kReferenceCurrent );
+	//A lamp held at L_ref averages 0.5 at the centre radius: a point there
+	//is lit 1 / ( 2 pi r_c ) of the time, so A averages tau L_ref / ( 2 pi r_c ).
+	const double pi = hooks.displayNoPi ? 1.0 : apparatus::kPi;
+	v.displayScale  = pi * v.rc / ( PersistenceFromParam( params[ PT_PERSISTENCE ] ) * apparatus::kReferenceCurrent );
 	return v;
 }
 

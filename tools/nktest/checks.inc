@@ -1256,7 +1256,8 @@ int runRate( const Perturb& perturb )
 {
 	std::printf( "\n=== rate: the disc, the wheel and the lamp at 24, 30, 60 and 120 fps against 240 fps, at 0.5, 1, 1.5 and 2 s: the samples run,\n"
 	             "    the lamp's state and strikes, the amplifier, the wheel's phase and speed, and the exposure. The chain runs on the\n"
-	             "    transmitter's sample clock, so the rates share its grid by design: this checks the frame boundaries' bookkeeping\n" );
+	             "    transmitter's sample clock, so the rates share its grid by design: this checks the frame boundaries' bookkeeping, and\n"
+	             "    that clock against N M f samples a second\n" );
 	const double rates[] = { 240.0, 120.0, 60.0, 30.0, 24.0 };
 	for( const Raster& raster : kRasters )
 	{
@@ -1296,6 +1297,17 @@ int runRate( const Perturb& perturb )
 			}
 			snaps.push_back( s );
 		}
+		//The anchor the comparisons cannot give (a clock wrong by the same
+		//factor at every rate passes them): f pictures a second, so after
+		//the plugin's t = 1/60 + 0.5 q s the transmitter has run t N M f
+		//samples, to the one it is part-way through.
+		double worstCount = 0.0;
+		for( size_t r = 0; r < snaps.size(); ++r )
+			for( size_t q = 0; q < 4; ++q )
+			{
+				const double t = 1.0 / 60.0 + 0.5 * static_cast< double >( q + 1 );
+				worstCount     = worse( worstCount, mag( static_cast< double >( snaps[ r ][ q ].c.samples ) - t * 30.0 * hM( 30 ) * 12.5 ) );
+			}
 		int exactWrong = 0;
 		double worstPsi = 0.0, worstDot = 0.0, worstA = 0.0;
 		for( size_t r = 1; r < snaps.size(); ++r )
@@ -1322,10 +1334,10 @@ int runRate( const Perturb& perturb )
 		//= 4e-11, x25. The exposure: 480 frames' decay and sum, 2 float
 		//ulps each (1.2e-4), and a scan split between frames computed
 		//differently (1e-5, --dwell's bound): 1.3e-4.
-		Check( exactWrong == 0 && worstPsi <= 1e-9 && worstDot <= 1e-9 && worstA <= 1.3e-4 && snaps[ 0 ][ 3 ].c.strikes > 100,
+		Check( exactWrong == 0 && worstPsi <= 1e-9 && worstDot <= 1e-9 && worstA <= 1.3e-4 && snaps[ 0 ][ 3 ].c.strikes > 100 && worstCount <= 1.0,
 		       fmt( "%4dx%-4d %d exact quantities differ (bit-exact); psi worst %.1e rev (tolerance 1e-9), psi' %.1e rev/s (tolerance 1e-9); exposure worst "
-		            "%.1e of its peak (tolerance 1.3e-4); %lld strikes by 2 s",
-		            raster.w, raster.h, exactWrong, worstPsi, worstDot, worstA, static_cast< long long >( snaps[ 0 ][ 3 ].c.strikes ) ) );
+		            "%.1e of its peak (tolerance 1.3e-4); %lld strikes by 2 s; the samples run %.2f from t N M f at worst (tolerance 1, the sample under way)",
+		            raster.w, raster.h, exactWrong, worstPsi, worstDot, worstA, static_cast< long long >( snaps[ 0 ][ 3 ].c.strikes ), worstCount ) );
 	}
 	return Verdict();
 }
@@ -1390,6 +1402,69 @@ int runColour( const Perturb& perturb )
 		       fmt( "%4dx%-4d %d unclipped pixels: G/R worst %.1e off %.5f (tolerance 1e-4), B worst %.1e (tolerance 1e-6)", raster.w, raster.h, used, worstG,
 		            rgb[ 1 ] / rgb[ 0 ], worstB ) );
 	}
+	//The brightness (the spec): a lamp held at L_ref = 20 mA averages 0.5,
+	//linear, at the field's centre radius. Held: a linear mid-grey puts the
+	//amplifier at 1/2 and the current at the Lamp's 20 mA (the sync, at the
+	//line's end, is the field's edge, not its middle). The output's linear R
+	//(the neon is shown with R = 1) over a 5 x 5 patch at the frame's centre
+	//(the field's middle, astride the lines either side of r_c: 1/r averages
+	//to 1/r_c there to 1e-5), averaged over 600 frames at 32.725 fps after 2 s
+	//(20 persistences), so the frames fall at every phase of the picture. The
+	//phase each frame ends at is read off the transmitter's own clock (its
+	//sample within the picture). Tolerance: the average of a periodic
+	//function over N phases is off its mean by at most its variation over a
+	//period times the phases' discrepancy on the circle (Koksma); the
+	//variation, twice the swing seen, is doubled for margin; plus 1e-4 for
+	//the float sRGB curve.
+	for( const Raster& raster : kRasters )
+	{
+		Rig rig;
+		const double fps = 32.725;// 12.5 / fps = 0.38197, the golden ratio's 2 - phi: the best spread phases
+		const Floats mid = grey( raster.w, raster.h, codeOf( 0.5 ) );
+		if( !startRig( rig, raster.w, raster.h, perturb, &mid, fps ) )
+			return 1;
+		rig.Set( PT_LAMP, ParamFromLamp( 20.0 ) );
+		rig.Set( PT_PERSISTENCE, ParamFromPersistence( 0.1 ) );
+		if( !rig.Render( static_cast< int >( 2.0 * fps ) ) )
+			return 1;
+		const int frames = 600;
+		std::vector< double > phase, value;
+		const int cx = raster.w / 2, cy = raster.h / 2;
+		for( int f = 0; f < frames; ++f )
+		{
+			if( !rig.Render( 1 ) )
+				return 1;
+			const Floats out = rig.Output();
+			double sum       = 0.0;
+			for( int y = cy - 2; y <= cy + 2; ++y )
+				for( int x = cx - 2; x <= cx + 2; ++x )
+					sum += linearOf( out[ ( static_cast< size_t >( y ) * raster.w + x ) * 4 ] );
+			value.push_back( sum / 25.0 );
+			const apparatus::ChainState& c = rig.Chain();
+			phase.push_back( static_cast< double >( c.cell ) / ( static_cast< double >( c.lines ) * c.samplesLine ) );
+		}
+		double mean = 0.0, lo = 1e9, hi = -1e9;
+		for( const double v : value )
+		{
+			mean += v / frames;
+			lo = std::min( lo, v );
+			hi = std::max( hi, v );
+		}
+		//The discrepancy on the circle: D+ + D- of the sorted phases.
+		std::sort( phase.begin(), phase.end() );
+		double above = 0.0, below = 0.0;
+		for( int i = 0; i < frames; ++i )
+		{
+			above = std::max( above, static_cast< double >( i + 1 ) / frames - phase[ static_cast< size_t >( i ) ] );
+			below = std::max( below, phase[ static_cast< size_t >( i ) ] - static_cast< double >( i ) / frames );
+		}
+		const double discrepancy = above + below;
+		const double tol         = 2.0 * ( 2.0 * ( hi - lo ) ) * discrepancy + 1e-4;
+		Check( mag( mean - 0.5 ) <= tol && hi < 0.999 && hi - lo > 0.05,
+		       fmt( "%4dx%-4d a lamp held at 20 mA: the field's middle averages %.5f linear over %d frames (want 0.5, tolerance %.1e: the swing %.3f to "
+		            "%.3f, the phases' discrepancy %.1e)",
+		            raster.w, raster.h, mean, frames, tol, lo, hi, discrepancy ) );
+	}
 	return Verdict();
 }
 
@@ -1417,10 +1492,22 @@ int runAlpha( const Perturb& perturb )
 				else
 					o[ 3 ] = b[ 3 ] = std::round( 255.0f * ( 2.0f * x / w - 1.0f ) ) / 255.0f;
 			}
-		Rig rig, ref;
-		if( !startRig( rig, w, h, perturb, &card ) || !startRig( ref, w, h, perturb, &blacked ) )
+		//The same light sent opaque: black on the left, and on the right the
+		//grey's linear light times its alpha, encoded back to a code value.
+		Floats weighted = grey( w, h, 0.0 );
+		for( int y = 0; y < h; ++y )
+			for( int x = w / 2; x < w; ++x )
+			{
+				float* o      = &weighted[ ( static_cast< size_t >( y ) * w + x ) * 4 ];
+				const float a = card[ ( static_cast< size_t >( y ) * w + x ) * 4 + 3 ];
+				o[ 0 ] = o[ 1 ] = o[ 2 ] = static_cast< float >( codeOf( linearOf( 0.5f ) * a ) );
+			}
+		Rig rig, ref, opaque;
+		if( !startRig( rig, w, h, perturb, &card ) || !startRig( ref, w, h, perturb, &blacked ) || !startRig( opaque, w, h, perturb, &weighted ) )
 			return 1;
-		double worst[ 2 ] = {};
+		if( !opaque.Render( 3 ) )
+			return 1;
+		double worst[ 2 ] = {}, weightErr = 0.0, peak = 0.0;
 		const float mixes[ 2 ] = { 1.0f, 0.5f };
 		size_t underAlpha = 0;
 		for( int k = 0; k < 2; ++k )
@@ -1438,15 +1525,29 @@ int runAlpha( const Perturb& perturb )
 			const std::vector< double > ea = rig.Exposure(), eb = ref.Exposure();
 			for( size_t i = 0; i < ea.size(); ++i )
 				underAlpha += ea[ i ] != eb[ i ];
+			if( k == 0 )
+			{
+				const std::vector< double > ew = opaque.Exposure();
+				for( size_t i = 0; i < ea.size(); ++i )
+				{
+					weightErr = worse( weightErr, mag( ea[ i ] - ew[ i ] ) );
+					peak      = std::max( peak, ew[ i ] );
+				}
+			}
 		}
+		//The weighting's tolerance, 1e-5 of the brightest pixel: the sRGB
+		//curve out and back in float holds the light to 1e-6, and the current
+		//(5 to 25 mA at the 15 mA Lamp) carries it with no gain above 2.
+		weightErr /= std::max( peak, 1e-30 );
 		rig.Set( PT_MIX, 0.0f );
 		if( !rig.Render( 1 ) )
 			return 1;
 		const size_t through = differing( rig.Output(), card );
-		Check( worst[ 0 ] <= 1e-6 && worst[ 1 ] <= 1e-6 && underAlpha == 0 && through == 0,
+		Check( worst[ 0 ] <= 1e-6 && worst[ 1 ] <= 1e-6 && underAlpha == 0 && through == 0 && weightErr <= 1e-5 && peak > 0.0,
 		       fmt( "%4dx%-4d alpha at Mix 1 off mix( a, 1, Mix ) by %.2g, at Mix 0.5 by %.2g (tolerance 1e-6); white under alpha 0 against black there: %zu "
-		            "exposure values differ (bit-exact); Mix 0: %zu values differ from the clip (bit-exact)",
-		            w, h, worst[ 0 ], worst[ 1 ], underAlpha, through ) );
+		            "exposure values differ (bit-exact); a grey under alpha a against its light x a sent opaque: %.1e of the brightest pixel (tolerance 1e-5); "
+		            "Mix 0: %zu values differ from the clip (bit-exact)",
+		            w, h, worst[ 0 ], worst[ 1 ], underAlpha, weightErr, through ) );
 	}
 	return Verdict();
 }
@@ -1795,6 +1896,45 @@ int runGeometry( const Perturb& perturb )
 		            "step; tolerance %.1f us, one sample)",
 		            1e6 * hLag( 30.0 ), 1e6 * dark, 1e6 * want, 1e6 * strikeAt, 1e6 * dtS ) );
 	}
+	{
+		//The strike within its sample: a lamp switched on at 2 mA (under the
+		//strike, so out) with the picture already at a grey that holds the
+		//current at 30 V and at 60 V over from the first sample (the
+		//amplifier starts settled). The lag is then a constant: the lamp
+		//must light exactly the lag after the start, wherever that falls in
+		//a sample (10.006 and 3.18 samples here). Read off the samples'
+		//light: lit time = the light summed over the line's picture, over the
+		//current. Tolerance 1 ns: the light is stored in float (6e-8 of
+		//2.6 ms is 0.2 ns); a strike rounded to its sample is up to 9.5 us off.
+		const int n = 30, M = hM( n );
+		const double lamp = 2.0, dtS = 1.0 / ( n * M * 12.5 );
+		double worst = 0.0;
+		std::string text;
+		for( const double over : { 30.0, 60.0 } )
+		{
+			const double target = hStrike + over / 10.0, ell = ( ( target - lamp ) / hSwing + 1.0 ) / 2.0;
+			std::vector< float > table( static_cast< size_t >( n ) * M, static_cast< float >( ell ) );
+			apparatus::ChainSettings s;
+			s.lines       = n;
+			s.rate        = 12.5;
+			s.lampMa      = lamp;
+			s.sync        = 0;
+			s.bandwidth   = 40000.0;
+			s.persistence = 1e9;
+			apparatus::ChainState state;
+			apparatus::FrameOut out;
+			apparatus::RunFrame( state, s, table.data(), 1.0 / ( n * 12.5 ), perturb.chain, out );
+			const double I = lamp + hSwing * ( 2.0 * static_cast< double >( table[ 0 ] ) - 1.0 );
+			double lit     = 0.0;
+			for( int i = 0; i < out.count && i < M - hSync; ++i )
+				lit += out.samples[ static_cast< size_t >( i ) ].light * out.sampleSeconds;
+			const double first = ( M - hSync ) * out.sampleSeconds - lit / I;
+			const double lag   = hLag( 10.0 * ( I - hStrike ) );
+			worst              = worse( worst, mag( first - lag ) );
+			text += fmt( " %g V over: first light %.4f us after the start against the lag %.4f us (%.3f samples);", over, 1e6 * first, 1e6 * lag, lag / dtS );
+		}
+		Check( worst <= 1e-9, fmt( "the strike within its sample, the lamp held at a constant current:%s worst %.1e s (tolerance 1e-9 s)", text.c_str(), worst ) );
+	}
 	return Verdict();
 }
 
@@ -1872,6 +2012,7 @@ int runNegative( bool offlineOnly = false )
 	add( "rate", runRate, "the disc advanced by 1/60 s a frame, whatever the frame", []( Perturb& p ) { p.chain.fixedFrameStep = true; } );
 	add( "rate", runRate, "the lamp's strike forgotten at every frame", []( Perturb& p ) { p.chain.strikeResetEachFrame = true; } );
 	add( "colour", runColour, "the lamp drawn in white", []( Perturb& p ) { p.whiteScreen = true; } );
+	add( "colour", runColour, "the display scaled without its pi", []( Perturb& p ) { p.displayNoPi = true; } );
 	add( "alpha", runAlpha, "the clip's alpha passed through", []( Perturb& p ) { p.alphaModel = 1; } );
 	add( "alpha", runAlpha, "the clip's light not weighted by its alpha", []( Perturb& p ) { p.premultiply = false; } );
 	add( "resize", runResize, "a new raster clears the exposure", []( Perturb& p ) { p.resizeResets = true; } );

@@ -572,8 +572,38 @@ std::vector< NamedParameter > listParameters( NipkowPlugin& plugin )
 	return list;
 }
 
+/// A number for a parameter must be one the host could send: 0..1 for a
+/// standard control, an integer in range for Lines, an element's index for
+/// an option, 0 or 1 for a button. Anything else is refused with the range.
+bool inRange( NipkowPlugin& plugin, const NamedParameter& parameter, float v, std::string& error )
+{
+	const bool whole = std::isfinite( v ) && v == std::round( v );
+	double low = 0.0, high = 1.0;
+	bool integral = false;
+	if( parameter.type == FF_TYPE_INTEGER )
+	{
+		low      = InfoOf( parameter.index ).low;
+		high     = InfoOf( parameter.index ).high;
+		integral = true;
+	}
+	else if( parameter.type == FF_TYPE_OPTION )
+	{
+		high     = static_cast< double >( plugin.GetNumParamElements( parameter.index ) ) - 1.0;
+		integral = true;
+	}
+	else if( parameter.type == FF_TYPE_EVENT )
+		integral = true;
+	if( !std::isfinite( v ) || v < low || v > high || ( integral && !whole ) )
+	{
+		error = parameter.name + " takes " + ( integral ? "an integer " : "" ) + "from " + fmt( "%g", low ) + " to " + fmt( "%g", high ) + ", not " + fmt( "%g", v );
+		return false;
+	}
+	return true;
+}
+
 /// `Name=Value`. The value is a number, or for an option the name of one of
-/// its elements; anything else is refused, never read as 0 (polyhedral's trap).
+/// its elements; anything else is refused, never read as 0 (polyhedral's trap),
+/// and so is a number the host could not send.
 bool applySetting( NipkowPlugin& plugin, const std::string& assignment, std::string& error )
 {
 	const size_t equals = assignment.find( '=' );
@@ -606,6 +636,8 @@ bool applySetting( NipkowPlugin& plugin, const std::string& assignment, std::str
 				error = "'" + value + "' is not a number" + ( parameter.type == FF_TYPE_OPTION ? " or an option of " + name : "" );
 				return false;
 			}
+			if( !inRange( plugin, parameter, got, error ) )
+				return false;
 			plugin.SetFloatParameter( parameter.index, got );
 			return true;
 		}
@@ -678,6 +710,12 @@ bool bindScript( NipkowPlugin& plugin, std::istream& in, const std::string& path
 			if( value.empty() || end == value.c_str() || *end != '\0' )
 			{
 				error = path + ":" + std::to_string( lineNumber ) + ": '" + value + "' is not a number";
+				return false;
+			}
+			std::string why;
+			if( !inRange( plugin, *found, v, why ) )
+			{
+				error = path + ":" + std::to_string( lineNumber ) + ": " + why;
 				return false;
 			}
 		}

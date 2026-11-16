@@ -27,6 +27,7 @@ struct PluginHooks
 	int alphaModel     = 0;    ///< 1 the clip's alpha passed through
 	bool premultiply   = true; ///< false: the clip's light not weighted by its alpha
 	bool whiteScreen   = false;///< the lamp drawn in white, not the neon's colour
+	bool displayNoPi   = false;///< the display scaled r_c / ( tau L_ref ), the pi left out
 	bool resizeResets  = false;///< a new raster clears the exposure
 	bool resizeWheel   = false;///< a new raster restarts the phonic wheel at the framing
 	bool resizeLamp    = false;///< a new raster puts the lamp out
