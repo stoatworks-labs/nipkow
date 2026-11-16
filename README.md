@@ -86,10 +86,11 @@ Release build (16 November 2026). Every picture check runs at **two rasters**, 1
 | the bundle | universal (`x86_64 arm64`), exports `plugMain`, ad-hoc signs; `oxbow` reads `SW Nipkow` / `NK01` / `effect` and renders through it |
 
 Render cost, from verify.sh's final run on 16 November 2026 with other builds sharing the
-machine, at the defaults over the harness's card: GPU time **0.72 ms** a frame at 720p (worst
-0.95) and **0.85 ms** at 1080p (worst 1.08); the CPU's time in `ProcessOpenGL` (the signal
-chain, and the table's read-back, which waits for the GPU) **0.69 ms** and **0.76 ms**. One
-4K run: 2.88 ms GPU, 2.44 ms CPU. macOS only.
+machine, at the defaults over the harness's card: GPU time **0.42 ms** a frame at 720p (worst
+1.06) and **0.84 ms** at 1080p (worst 1.63); the CPU's time in `ProcessOpenGL` (the signal
+chain, and the table's read-back, which waits for the GPU) **0.45 ms** and **0.73 ms** (worst
+0.85 and 1.20). One 4K run: 3.05 ms GPU, 2.52 ms CPU. The previous run on the same machine
+read 0.72 and 0.85 ms GPU: the medians move with what else is running. macOS only.
 
 ### Not established
 
