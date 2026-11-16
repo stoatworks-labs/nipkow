@@ -57,6 +57,17 @@ float lightAt( ivec2 p )
 	return Premultiply == 1 ? lum * clamp( src.a, 0.0, 1.0 ) : lum;
 }
 
+// sin to a float's precision over the field: Apple's software renderer's
+// sin is off by up to 1.1e-3 for |x| <= 0.4 (measured; the GPU's 6e-8),
+// which bends the disc's arcs by 1% there. Here |x| <= pi / 8 (half the
+// field at 8 lines), so the series to x^7 serves: the first term left out,
+// x^9 / 9!, is 6e-10.
+float sine( float x )
+{
+	float q = x * x;
+	return x * ( 1.0 - q / 6.0 * ( 1.0 - q / 20.0 * ( 1.0 - q / 42.0 ) ) );
+}
+
 void main()
 {
 	int j   = int( gl_FragCoord.x );
@@ -71,8 +82,8 @@ void main()
 		float d   = 0.5 * ( n - 1.0 ) - float( k );
 		float rk  = Rc + d;
 		float phi = ( s - 0.5 ) * Phi;
-		float h   = sin( 0.5 * phi );
-		offset    = vec2( d - 2.0 * rk * h * h, rk * sin( phi ) );
+		float h   = sine( 0.5 * phi );
+		offset    = vec2( d - 2.0 * rk * h * h, rk * sine( phi ) );
 	}
 	vec2 centre = Centre + offset * Scale;
 	vec2 lo     = centre - 0.5 * Scale;

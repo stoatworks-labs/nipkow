@@ -26,7 +26,8 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
 # file | the exact text | its one-character mutant | the check that must fail | what it is
-# A check runs at 320x180 unless it names a raster ('--spiral@1280x720').
+# A check runs at 320x180 unless it names a raster ('--spiral@1280x720'), and on the
+# GPU unless it starts 'sw:' (Apple's software renderer, NKTEST_RENDERER=software).
 # The fields are split on '|', so neither a target nor a mutant may contain one
 # (conway's trap): no GLSL || here.
 MUTANTS=(
@@ -35,7 +36,7 @@ MUTANTS=(
 	"source/Shaders.cpp|vec3 hi = pow( ( c + 0.055 ) / 1.055, vec3( 2.4 ) );|vec3 hi = pow( ( c + 0.055 ) / 1.055, vec3( 2.5 ) );|--lamp|GLSL: the clip decoded with gamma 2.5, 4 -> 5"
 	"source/Shaders.cpp|offset = vec2( 0.5 * n - ( float( k ) + 0.5 ), ( s - 0.5 ) * 7.0 * n / 3.0 );|offset = vec2( 0.5 * n - ( float( k ) + 1.5 ), ( s - 0.5 ) * 7.0 * n / 3.0 );|--spiral|GLSL: the drum's line k explores line k + 1, 0 -> 1"
 	"source/Shaders.cpp|offset = vec2( 0.5 * n - ( float( k ) + 0.5 ), ( s - 0.5 ) * 7.0 * n / 3.0 );|offset = vec2( 0.5 * n - ( float( k ) + 0.5 ), ( s - 0.5 ) * 8.0 * n / 3.0 );|--arc|GLSL: the drum's line 8N/3 long, 7 -> 8"
-	"source/Shaders.cpp|		float h   = sin( 0.5 * phi );|		float h   = sin( 1.5 * phi );|--arc|GLSL: the disc's arc bowed three times too far, 0 -> 1"
+	"source/Shaders.cpp|		float h   = sine( 0.5 * phi );|		float h   = sine( 1.5 * phi );|--arc|GLSL: the disc's arc bowed three times too far, 0 -> 1"
 	"source/Shaders.cpp|	vec2 lo     = centre - 0.5 * Scale;|	vec2 lo     = centre - 1.5 * Scale;|--spiral|GLSL: the transmitter's aperture a hole too wide on one side, 0 -> 1"
 	"source/Shaders.cpp|		return 0.5 * v * v;|		return 1.5 * v * v;|--dwell|GLSL: the hole's entry ramp three times too steep, 0 -> 1"
 	"source/Shaders.cpp|	return 2.0 * a * ( v - a );|	return 2.0 * a * ( v + a );|--dwell|GLSL: the ramp's integral past the hole's width, - -> +"
@@ -80,11 +81,20 @@ MUTANTS=(
 	"source/Nipkow.cpp|	v.displayScale  = pi * v.rc / ( PersistenceFromParam( params[ PT_PERSISTENCE ] ) * apparatus::kReferenceCurrent );|	v.displayScale  = pi / v.rc / ( PersistenceFromParam( params[ PT_PERSISTENCE ] ) * apparatus::kReferenceCurrent );|--colour|C++: the display divided by r_c, * -> /"
 	"source/Nipkow.cpp|			clockScale  = hostDelta < 1.0 ? 1.0 : 0.001;|			clockScale  = hostDelta > 1.0 ? 1.0 : 0.001;|--clock|C++: the clock-unit fallback upside down, < -> >"
 	"source/Nipkow.cpp|	const int64_t micros = std::llround( now * 1e6 );|	const int64_t micros = std::llround( now * 1e5 );|--rate|C++: the host's time read a tenth as long, 6 -> 5"
+	"source/Shaders.cpp|		offset    = vec2( d - 2.0 * rk * h * h, rk * sine( phi ) );|		offset    = vec2( d - 2.0 * rk * h * h, rk * sin ( phi ) );|sw:--arc@1280x720|GLSL: the disc's height through the built-in sin, on Apple's software renderer, sine( -> sin ("
 )
 
 limit() {
 	# macOS has no timeout(1): perl's alarm is enough.
 	perl -e 'alarm shift; exec @ARGV' "$@"
+}
+
+# run_check CHECK [nktest output]: the check at its raster, on its renderer.
+run_check() {
+	local check="$1" size=320x180 renderer=""
+	if [[ "$check" == sw:* ]]; then renderer=software; check="${check#sw:}"; fi
+	if [[ "$check" == *@* ]]; then size="${check#*@}"; check="${check%@*}"; fi
+	NKTEST_RENDERER="$renderer" limit 600 "$tree/build/nktest" "$check" --size "$size"
 }
 
 tree="$WORK/tree"
@@ -96,9 +106,7 @@ cmake --build "$tree/build" --target nktest -j8 >/dev/null 2>&1 || { echo "the u
 # The unmutated copy must pass every check the mutants name: a check failing
 # already would catch every mutant for nothing.
 for check in $( printf '%s\n' "${MUTANTS[@]}" | cut -d'|' -f4 | sort -u ); do
-	size=320x180
-	if [[ "$check" == *@* ]]; then size="${check#*@}"; check="${check%@*}"; fi
-	limit 600 "$tree/build/nktest" "$check" --size "$size" >/dev/null 2>&1 || { echo "the unmutated copy fails $check at $size"; exit 1; }
+	run_check "$check" >/dev/null 2>&1 || { echo "the unmutated copy fails $check"; exit 1; }
 done
 
 # The edit, in Python, given its arguments on the command line (no heredoc:
@@ -144,12 +152,7 @@ for entry in "${MUTANTS[@]}"; do
 		# A GLSL mutant is a string literal: it must be in the binary, verbatim.
 		printf '   FAIL  the mutant is not in the built binary -- the build did not pick it up\n'
 	else
-		size=320x180
-		if [[ "$check" == *@* ]]; then
-			size="${check#*@}"
-			check="${check%@*}"
-		fi
-		limit 600 "$tree/build/nktest" "$check" --size "$size" >"$WORK/log" 2>&1 || status=$?
+		run_check "$check" >"$WORK/log" 2>&1 || status=$?
 		if [[ "$status" -eq 0 ]]; then
 			printf '   FAIL  %s still PASSES -- the check does not cover this code\n' "$check"
 		else
