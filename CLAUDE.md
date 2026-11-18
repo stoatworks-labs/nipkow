@@ -99,9 +99,13 @@ amplifier, the lamp, the wheel), the clock, the resize or the composite. The spe
 - `nipkow_core` is an OBJECT library: the plugin registers itself from a file-scope
   constructor nothing references.
 - The macOS build must be universal. Check with `lipo`, never the build log.
-- **Provisional hand copies:** `source/StoatworksAbout*.h` (guide = "", no user guide) and
-  `ATTRIBUTIONS.md`. Once the project is registered in stoatworks-backend, `sync-about.py`
-  and `sync-attributions.py` generate them; edit them there then.
+- **Generated, never edit here:** `source/StoatworksAbout.h` (stoatworks-backend's
+  `sync-about.py`, from the website's projects.json: name, hook, guide, page, repo),
+  `ATTRIBUTIONS.md` and README's attributions block (`sync-attributions.py`, from
+  `attributions/derived.json`), `.github/FUNDING.yml` and the issue forms. Registered
+  2026-11-18. The About block is a text and four buttons (page, guide, source, support), so
+  the plugin declares 16 parameters; a sync that changes that changes wincheck's `-Params`
+  and the demo's .wasm (rebuild it: `demo/tools/build-wasm.sh`).
 - **Workflows** (the repo is public, `stoatworks-labs/nipkow`): `ci.yml` builds on macOS
   (arm64, `nktest --list` and `--offline`, glslc) and Windows on every push and pull request;
   `release.yml` builds the universal bundle and the x64 DLL (checked by `tools/wincheck.ps1`,
