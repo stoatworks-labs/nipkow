@@ -86,7 +86,7 @@ for( $i = 0; $i -lt $count; $i++ )
     $names += [Runtime.InteropServices.Marshal]::PtrToStringAnsi( $p )
 }
 Check ( $count -eq $Params ) "$count parameters (expected $Params): $( $names[0] ) .. $( $names[-1] )"
-Check ( $names[0] -eq 'Pattern' -and $names -contains 'Preset File' -and $names -contains 'About' ) 'Pattern first; Preset File and About among them'
+Check ( $names[0] -eq 'Lines' -and $names -contains 'Persistence' -and $names[11] -eq 'About' -and $names[-1] -eq 'Support the work' ) 'Lines first; Persistence among them; About twelfth; Support the work last'
 
 if( $failures -gt 0 ) { Write-Host "`n  FAIL ($failures)"; exit 1 }
 Write-Host "`n  PASS"
