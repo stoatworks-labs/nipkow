@@ -249,7 +249,9 @@ reads 1.5–1.7 levels: the flicker and the hunting wheel. Arena 7.27.1 on win-l
 fleet's gate on the release workflow's own DLL: 9 passed, 0 failed, 0 skipped; all 17 controls
 as declared; 10 live (Opacity and 9 of Nipkow's 11, held under Sync Locked and Persistence
 1 s: plugin-bench 6ed7b21), Speed and Persistence inconclusive (Free's drift moves the floor's
-own grabs; Persistence barely changes a still's mean).
+own grabs; Persistence barely changes a still's mean). Re-gated on the v0.1.0 release's own
+zip (its DLL differs by hash from the dispatch build): 9/0/0 again, 11 live (Persistence live
+at 1.09 levels averaged), Speed inconclusive.
 
 Not done: a show; presets; an OpenFX port; looking at the demo clips in a show rather than as
 numbers.

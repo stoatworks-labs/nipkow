@@ -217,7 +217,11 @@ skipped. Nine of the eleven valued controls changed Arena's picture, read from i
 thumbnail and held under Sync Locked with Persistence 1 s where the hunting wheel and the
 flicker would move it between grabs (plugin-bench's `arena/expect/nipkow.json`); Speed and
 Persistence read inconclusive there (under Free the drift moves the floor's own grabs too),
-and both changed the picture on the Mac.
+and both changed the picture on the Mac. The v0.1.0 release's own Windows zip was gated
+again the same morning, since its DLL differs by hash from the pre-tag build (build
+timestamps): 9 passed, 0 failed, 0 skipped again, and this time Persistence read live as well
+(1.09 levels, averaged); Speed was inconclusive again. Persistence sits close to the
+floor on a still, so either reading can come up.
 
 ### Not established
 
