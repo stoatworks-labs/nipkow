@@ -126,8 +126,9 @@ amplifier, the lamp, the wheel), the clock, the resize or the composite. The spe
 - `demo/shaders.js` is a copy: after changing a shader, `python3 demo/tools/check_shaders.py
   --write`. The same script checks the kit's ES port (only the version line, the precisions
   and `precise` off the variables its PRECISE lists) and the .wasm's input hashes.
-- The page's photosensitivity warning, its gate for links away from the defaults and its
-  caution line are flash safety: don't weaken them (AGENTS.md, "The browser demo").
+- The plugin flickers at its defaults, so the page's photosensitivity warning, its Start gate
+  (nothing drawn before it, embeds included) and its caution line stay: don't weaken them
+  (AGENTS.md, "The browser demo").
 - `demo/vendor/` is the shared kit (`stoatworks-backend/resolume-demo`); never edit it.
 
 ## Diagnostics

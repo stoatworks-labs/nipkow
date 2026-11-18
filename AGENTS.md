@@ -375,19 +375,23 @@ route: the zone is at Cloudflare's 100 custom domains, so `nipkow-demo` is a pro
   loses the remainder, 2e-6 of a line, 5e-4 of a sample. Both under one 8-bit step by that
   arithmetic; neither measured. A new `precise` in Shaders.cpp fails check_shaders.py until it
   is added to PRECISE, here and to the page's list.
-- **Flash safety, the page's side.** The warning is the first thing on the page (index.html),
-  in the README's words. The page starts at the defaults: a URL that carries any control away
-  from its default (Copy link writes one) mounts nothing until the visitor chooses "Open at the
-  defaults" (the settings are stripped from the URL) or "Open with the link's settings". Embeds
-  are gated the same way, deliberately: a link that flickers on opening is worse than a click
-  in an OBS source. No control is clamped. A caution line under the picture names a setting in
-  or beside the README's flickering range (Persistence under 0.6 s, Picture Rate 3 to 8, Lamp
-  over 20 mA, Frame Fill with any of them); it reads the table, it measures nothing. Clips: the
-  dusk scene first, and not the 100% bars or the alpha clip.
+- **Flash safety, the page's side.** The plugin flickers at its defaults (Persistence 0.1 s)
+  and the page keeps it: Allan, 2026-11-18, never change a model or a default for flash
+  safety, warn instead. The warning is the first thing on the page (index.html), with the
+  README's Flashing numbers. **Nothing is mounted, so nothing is drawn, until the visitor
+  presses Start under it** (xenon's gate), for every way in: a plain visit, a URL carrying
+  settings (Copy link writes one; the gate lists them and offers "Start at the defaults
+  instead", which strips them from the URL), and `?embed=1` too, deliberately: an embed that
+  starts flickering on its own is worse than one click in an OBS source. No control is
+  clamped. A caution line under the picture names what the README's table says of the current
+  settings (at the defaults: Persistence under 0.2 s; also under 0.6 s, Picture Rate 4 to 7 or
+  near 8, a higher Lamp, Sync Free, Frame Fill); it reads the table, it measures nothing, and
+  says combinations were not measured. Clips: the dusk scene first, and not the 100% bars or
+  the alpha clip.
 - **Checked on the page** (headless Chrome, GPU and SwiftShader, 960x540): all eight stages
   accepted, `precise` off the seven, the read-outs in the plugin's units, Lines 30 → 60
-  changes the picture, the gate (shown, nothing drawn, both answers), the caution, the RGBA
-  read-back path. Chrome logs "GPU stall due to ReadPixels" warnings: that is the table's
+  changes the picture, the Start gate (nothing drawn before it, a plain visit and a link with
+  settings, both answers), the caution, the RGBA read-back path. Chrome logs "GPU stall due to ReadPixels" warnings: that is the table's
   per-frame read-back, which is the plugin's design. Not compared with nktest frame for frame.
 - **Rebuild after any change under `source/`**, the generated `StoatworksAbout*.h` included:
   `demo/tools/build-wasm.sh`, then commit both outputs and `demo/wasm/inputs.sha256`;

@@ -185,9 +185,9 @@ generated clips or a picture of your own. WebGL2 compiles GLSL ES 3.00, which ha
 so the page drops the exposure pass's seven: a browser's compiler may then reassociate the
 arithmetic they protect, which works out under one 8-bit step but has not been measured. It
 needs 32-bit float render targets (`EXT_color_buffer_float`) and stops without them. The
-[photosensitivity warning](#flashing) applies there too: the page starts at the defaults, and a
-link that carries other settings asks before anything is drawn. It is a demo, not the plugin,
-and the page lists what it leaves out.
+[photosensitivity warning](#flashing) applies there too: it flickers at the defaults, so the
+page opens behind the warning and draws nothing until you press Start, whatever link (or
+embed) brought you there. It is a demo, not the plugin, and the page lists what it leaves out.
 
 ## Build
 

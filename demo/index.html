@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Nipkow — browser demo | Stoatworks Labs</title>
-    <meta name="description" content="Try the Nipkow FFGL effect for Resolume in your browser: Baird's 30-line mechanical television looking at the clip, a mirror drum scanning it, a neon lamp that strikes late and glows over part of its plate when starved, a spinning disc drawing it back one hole at a time, and a phonic wheel that hunts. The plugin's own C++ compiled unmodified to WebAssembly, drawing with its own GLSL in WebGL2. Some settings flicker; it starts at the plugin's safe defaults. A demo, not the plugin." />
+    <meta name="description" content="Try the Nipkow FFGL effect for Resolume in your browser: Baird's 30-line mechanical television looking at the clip, a mirror drum scanning it, a neon lamp that strikes late and glows over part of its plate when starved, a spinning disc drawing it back one hole at a time, and a phonic wheel that hunts. The plugin's own C++ compiled unmodified to WebAssembly, drawing with its own GLSL in WebGL2. It flickers in saturated red at the plugin's own defaults, as a Baird televisor did, so the page opens behind a photosensitivity warning and draws nothing until you press Start. A demo, not the plugin." />
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="./vendor/kit.css" />
     <link rel="stylesheet" href="./nipkow.css" />
@@ -12,7 +12,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Stoatworks Labs" />
     <meta property="og:title" content="Nipkow — browser demo | Stoatworks Labs" />
-    <meta property="og:description" content="Try the Nipkow FFGL effect for Resolume in your browser: Baird's 30-line mechanical television looking at the clip, a mirror drum scanning it, a neon lamp that strikes late and glows over part of its plate when starved, a spinning disc drawing it back one hole at a time, and a phonic wheel that hunts. The plugin's own C++ compiled unmodified to WebAssembly, drawing with its own GLSL in WebGL2. Some settings flicker; it starts at the plugin's safe defaults. A demo, not the plugin." />
+    <meta property="og:description" content="Try the Nipkow FFGL effect for Resolume in your browser: Baird's 30-line mechanical television looking at the clip, a mirror drum scanning it, a neon lamp that strikes late and glows over part of its plate when starved, a spinning disc drawing it back one hole at a time, and a phonic wheel that hunts. The plugin's own C++ compiled unmodified to WebAssembly, drawing with its own GLSL in WebGL2. It flickers in saturated red at the plugin's own defaults, as a Baird televisor did, so the page opens behind a photosensitivity warning and draws nothing until you press Start. A demo, not the plugin." />
     <meta property="og:url" content="https://nipkow-demo.stoatworks-labs.com/" />
     <meta name="twitter:card" content="summary" />
   </head>
@@ -20,29 +20,35 @@
     <section class="nk-warning" id="photosensitivity" aria-labelledby="nk-warning-title">
       <h2 class="nk-warning__title" id="nk-warning-title">Photosensitivity warning</h2>
       <p>
-        <strong>Some settings make this picture flicker.</strong> Turned down,
-        <strong>Persistence</strong> at 0.5 s or less on a white source (0.15 s or less on
-        bright clips), or a <strong>Picture Rate</strong> of 4 to 7, makes the whole picture
-        flicker in saturated red more than three times a second, which can trigger seizures
-        in people with photosensitive epilepsy. <strong>Frame Fill</strong> spreads whatever
-        flickers over the whole frame.
+        <strong>This picture flickers at the plugin's own defaults.</strong> A Baird televisor lit
+        its picture one point at a time, once a picture, and so does this. At the default
+        <strong>Persistence</strong> of 0.1 s every lit point swings by about half its light 12½
+        times a second, so on a bright picture most of the field flickers in saturated red past
+        WCAG's red-flash threshold: 70% of the worst ten-degree window on white, 64% on
+        Resolume's brightest demo clip, 50% on the plugin's test card, 33% on a flat 25% grey,
+        5–10% on dark clips (WCAG fails 25%). Flicker like this can trigger seizures in people
+        with photosensitive epilepsy. If you, or anyone who can see your screen, may be
+        affected, do not start it.
       </p>
       <p>
-        The page starts at the plugin's own defaults (a link that carries other settings asks
-        first), and at those (Persistence 1 s, a flash-safety default) nothing crosses WCAG's
-        flash thresholds. If you, or anyone who
-        can see your screen, may be affected, leave Persistence and Picture Rate where they
-        are. The line under the picture warns when a setting is in or near that range;
-        <strong>Defaults</strong>, above the controls, puts every control back, and
-        <strong>Pause</strong>, under the picture, stops it at once.
+        <strong>Frame Fill</strong>, a higher <strong>Lamp</strong>, a <strong>Picture
+        Rate</strong> near 5 or 8, Persistence 0.05 s or less and <strong>Sync Free</strong>
+        make it worse. Turning Persistence up calms it: 0.2 s or more keeps the brightest demo
+        clip under the line, 0.6 s or more keeps white under, and at 1 s nothing measured
+        crosses except a Picture Rate of 4 to 7. These are the plugin's own measurements (its
+        README, Flashing); this page measures nothing.
       </p>
-      <div class="nk-gate" id="nk-gate" hidden>
-        <p class="nk-gate__text" id="nk-gate-text"></p>
-        <div class="nk-gate__actions">
-          <button type="button" class="btn nk-gate__defaults" id="nk-gate-defaults">Open at the defaults</button>
-          <button type="button" class="btn" id="nk-gate-link">Open with the link's settings</button>
-        </div>
+      <p>
+        Nothing is drawn until you press Start, whatever link brought you here. The line under
+        the picture says when a setting is in the range that flickers; <strong>Pause</strong>,
+        under the picture, stops it at once.
+      </p>
+      <p class="nk-gate__text" id="nk-gate-text" hidden></p>
+      <div class="nk-gate__actions">
+        <button type="button" class="btn nk-warning__start" id="nk-start" hidden>I have read this. Start the picture</button>
+        <button type="button" class="btn" id="nk-start-defaults" hidden>Start at the defaults instead</button>
       </div>
+      <p class="nk-warning__note" id="nk-start-note" role="status"></p>
     </section>
 
     <main id="demo">
@@ -59,8 +65,8 @@
         </p>
         <p>
           This demo runs the plugin's own C++, compiled to WebAssembly, and its shaders in
-          your browser, so it needs JavaScript and WebGL2. Some of its settings flicker
-          (see the warning above); it starts at the plugin's defaults, which do not.
+          your browser, so it needs JavaScript and WebGL2. It flickers at the plugin's
+          defaults (see the warning above), and draws nothing until you press Start.
         </p>
         <ul>
           <li><a href="https://github.com/stoatworks-labs/nipkow">Source on GitHub</a></li>

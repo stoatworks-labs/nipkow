@@ -56,23 +56,29 @@
  * Flash safety
  * ---------------------------------------------------------------------------
  *
- * Measured by the plugin's own harness (README, Flashing): at the defaults
- * (Persistence 1 s) nothing crosses WCAG's flash thresholds; Persistence
- * 0.5 s or less on white (0.15 s or less on bright clips), or a Picture Rate
- * of 4 to 7, makes the whole picture flicker in saturated red more than three
- * times a second. So:
+ * The plugin flickers at its own defaults, as a Baird televisor did, and is
+ * meant to (Allan, 2026-11-18: never change a model or a default for flash
+ * safety; warn instead). Measured by its harness (README, Flashing): at
+ * Persistence 0.1 s every lit point swings by about half its light 12 1/2
+ * times a second, past WCAG's red-flash threshold over 70% of the worst
+ * ten-degree window on white, 64% on Resolume's brightest demo clip, 33% on a
+ * flat 25% grey; Frame Fill, a higher Lamp, a Picture Rate near 5 or 8,
+ * Persistence 0.05 s or less and Sync Free make it worse; 0.2 s keeps the
+ * brightest clip under, 0.6 s white, and at 1 s only Picture Rate 4 to 7
+ * crosses. So:
  *
  *   - the warning is the first thing on the page, above the picture and the
- *     controls (index.html);
- *   - the page starts at the plugin's own defaults. A link that carries
- *     settings away from them (Copy link writes one) is not applied until the
- *     visitor has chosen, under the warning, to open it with those settings
- *     or at the defaults; nothing is drawn before that. Embeds too: a gate
- *     in an OBS source is a defect in someone's show, but a link that flashes
- *     on opening is worse, and it is answered once;
- *   - every control keeps the plugin's own range. Nothing is clamped for
- *     safety: the settings that flicker are the plugin's, and the line under
- *     the picture says when one is in or near the range that does;
+ *     controls, and says that (index.html);
+ *   - nothing is mounted, so nothing is drawn, until the visitor presses
+ *     Start under it (xenon's gate), whatever the way in: a plain visit, a
+ *     link carrying settings (Copy link writes one; the gate says what it
+ *     sets, and offers the defaults instead), and `?embed=1` too. A click in
+ *     an OBS source is a nuisance; an embed that starts flickering on its own
+ *     is worse;
+ *   - every control keeps the plugin's own range and the page starts at the
+ *     plugin's own defaults. Nothing is clamped: the flicker is the plugin's,
+ *     and the line under the picture says when a setting is in the range
+ *     that flickers (at the defaults, it is);
  *   - the default clip is the kit's synthetic scene, mostly dusk; no clip on
  *     the menu flashes by itself, and the brightest bars are left off.
  */
@@ -248,15 +254,15 @@ function readout(d) {
 /** Tooltips: this page's words, from the README's description of each control. */
 const HINTS = {
   Lines: 'How many lines the picture is scanned in, 8 to 120 (30, Baird’s standard); the disc has as many holes. FF_TYPE_INTEGER in the plugin, a number field here, held to its declared 8–120.',
-  'Picture Rate': 'Pictures a second, 2 to 30, geometrically (12½, the standard). Every point is lit once a picture. A rate of 4 to 7 makes the whole picture flicker in saturated red more than three times a second: see the warning at the top.',
+  'Picture Rate': 'Pictures a second, 2 to 30, geometrically (12½, the standard). Every point is lit once a picture. A rate of 4 to 7 flickers past WCAG’s red-flash threshold even at Persistence 1 s, and near 5 or 8 the flicker is harder: see the warning at the top.',
   Scanner: 'The transmitter. Drum: the BBC’s mirror drum, straight lines that the disc draws as arcs. Disc: a disc like the receiver’s, the same arcs at both ends, so the geometry cancels.',
   Bandwidth: 'The amplifier, one pole, 0.5 to 40 kHz, geometrically (9 kHz, the BBC’s channel). Narrower smears the picture’s edges along the lines.',
-  Lamp: 'The neon’s standing current, 0 to 30 mA (10.1 mA, set from Resolume’s demo clips); the signal swings it ±10 mA. Lower, black puts the lamp out and it strikes again a formative lag later; a starved lamp glows over only part of its plate.',
-  Sync: 'Locked: an ideal synchroniser. Hunting: the phonic wheel, whose coils carry the lamp’s current, holds the disc in step; a dark picture holds it weakly, so it swings and slips. Free: its coils disconnected, so the disc runs at the motor’s own speed.',
+  Lamp: 'The neon’s standing current, 0 to 30 mA (10.1 mA, set from Resolume’s demo clips); the signal swings it ±10 mA. Lower, black puts the lamp out and it strikes again a formative lag later; a starved lamp glows over only part of its plate. Higher, the flicker is harder.',
+  Sync: 'Locked: an ideal synchroniser. Hunting: the phonic wheel, whose coils carry the lamp’s current, holds the disc in step; a dark picture holds it weakly, so it swings and slips. Free: its coils disconnected, so the disc runs at the motor’s own speed (and on white the flicker is a little harder).',
   Speed: 'The motor’s own speed error, ±5% (+0.5%). Hunting, the wheel pulls it in as far as its pull-out (on the line under the picture); Free, the picture drifts.',
   Framing: 'Where the wheel locks, ±½ line.',
-  Persistence: 'How long the screen holds its light, 20 ms to 1 s, geometrically. 1 s, the top, is the plugin’s default, for flash safety: at 0.5 s or less on a white clip (0.15 s or less on bright ones) the whole picture flickers in saturated red more than three times a second. See the warning at the top.',
-  Frame: 'Baird: the 7:3 field, the whole sector fitted to the frame’s height. Fill: the field stretched to the frame, which no televisor did, so whatever flickers flickers everywhere.',
+  Persistence: 'How long the screen holds its light, 20 ms to 1 s, geometrically (0.1 s, about one picture). At the default every lit point swings by about half its light once a picture, so a bright picture flickers in saturated red 12½ times a second, past WCAG’s red-flash threshold. Turned up it calms: 0.2 s or more keeps the brightest demo clip under the line, 0.6 s or more keeps white under. 0.05 s or less is worse. See the warning at the top.',
+  Frame: 'Baird: the 7:3 field, the whole sector fitted to the frame’s height. Fill: the field stretched to the frame, which no televisor did, so the flicker covers the whole frame.',
   Mix: 'The televisor’s picture against the clip, in code values. 1: the picture alone, black round it, opaque. 0: the clip, untouched.',
 };
 
@@ -323,8 +329,8 @@ function hostValue(d, v) {
 
 //===========================================================================
 // The flickering range, as the plugin's README measures it (Flashing), for
-// the line under the picture and the question a link asks. The page's
-// reading of a table, not a measurement made here.
+// the line under the picture and the Start gate. The page's reading of a
+// table measured one setting at a time, not a measurement made here.
 //===========================================================================
 
 /** The physical value of a control at kit value v (Controls.cpp's conversion). */
@@ -334,31 +340,40 @@ function physical(name, v) {
 }
 
 /**
- * What the README's Flashing table says of these settings, as sentences, or
- * an empty list where they are at or near the defaults' 0%. `get(id)` is the
- * kit value of a control.
+ * What the README's Flashing table says of these settings, as sentences: an
+ * empty list only where it measured nothing crossing. `get(id)` is the kit
+ * value of a control. At the plugin's defaults the list is not empty.
  */
 function flashNotes(get) {
   const notes = [];
   const persistence = physical('Persistence', get('persistence'));
   const rate = physical('Picture Rate', get('picturerate'));
   const lamp = physical('Lamp', get('lamp'));
-  const frame = byName('Frame');
-  const fill = frame && frame.elements[Math.round(get('frame'))] === 'Fill';
-  if (persistence <= 0.5 + 1e-9) {
-    notes.push(`Persistence ${UNITS.Persistence(persistence)} is in the range that flickers (0.5 s or less on white, 0.15 s or less on bright clips)`);
-  } else if (persistence < 0.6) {
-    notes.push(`Persistence ${UNITS.Persistence(persistence)} is just above the range that flickers on white (0.5 s or less)`);
+  const option = (name) => {
+    const p = byName(name);
+    return p ? p.elements[Math.round(get(p.id))] : '';
+  };
+  const P = UNITS.Persistence(persistence);
+  const flickering = persistence < 0.6;
+  if (persistence <= 0.05 + 1e-9) {
+    notes.push(`Persistence ${P}: at 0.05 s or less the flicker is at its hardest (on white it crosses the luminance threshold too)`);
+  } else if (persistence < 0.2) {
+    notes.push(`Persistence ${P}: under 0.2 s a bright picture flickers past WCAG’s red-flash threshold (the default 0.1 s: 70% of the worst window on white, 64% on Resolume’s brightest demo clip, 33% on a 25% grey; WCAG fails 25%)`);
+  } else if (flickering) {
+    notes.push(`Persistence ${P}: under 0.6 s white still flickers past the threshold (the brightest demo clip is under from 0.2 s)`);
   }
   if (rate >= 4 - 1e-9 && rate < 8) {
-    notes.push(`Picture Rate ${UNITS['Picture Rate'](rate)} is in or beside the range that flickers (4 to 7)`);
-  } else if (rate >= 3 - 1e-9 && rate < 4) {
-    notes.push(`Picture Rate ${UNITS['Picture Rate'](rate)} is just under the range that flickers (3 a second read 24.8% of the window on white; WCAG fails 25%)`);
+    notes.push(`Picture Rate ${UNITS['Picture Rate'](rate)}: 4 to 7 a second flickers past the threshold even at Persistence 1 s (47–70% on white)${flickering && rate >= 4.5 && rate < 6 ? '; near 5 it is harder still (on white the luminance flashes too)' : ''}`);
+  } else if (flickering && rate >= 8 && rate < 9) {
+    notes.push(`Picture Rate ${UNITS['Picture Rate'](rate)}: near 8 the flicker is harder (on white the luminance flashes too)`);
   }
-  if (lamp > 20) {
-    notes.push(`Lamp ${UNITS.Lamp(lamp)} is nearer the line on white (30 mA read 15% of the window; WCAG fails 25%)`);
+  if (flickering && lamp > 12) {
+    notes.push(`Lamp ${UNITS.Lamp(lamp)}: a higher Lamp flickers harder`);
+  } else if (!flickering && lamp > 20) {
+    notes.push(`Lamp ${UNITS.Lamp(lamp)}: at Persistence 1 s, 30 mA on white read 15% of the window (WCAG fails 25%)`);
   }
-  if (notes.length && fill) notes.push('Frame Fill spreads it over the whole frame');
+  if (notes.length && option('Sync') === 'Free') notes.push('Sync Free: a little harder on white');
+  if (notes.length && option('Frame') === 'Fill') notes.push('Frame Fill: the flicker covers the whole frame (100% of the window on white and the brightest clip)');
   return notes;
 }
 
@@ -483,9 +498,9 @@ const DIFFERENCES = [
   'The clock is the page’s: seconds from frame deltas, capped at a tenth of a second a frame, handed to SetTime. The plugin’s own vote against the wall clock settles the unit (seconds, here within four frames); until it does the plugin runs on the wall clock, and the frame it settles on starts its intervals afresh — the plugin’s own rules. The plugin also caps a frame at 0.1 s. Restart is a backward jump and Pause a clock that stands still; in both the plugin runs the last real frame’s length, as it does in a host whose clock stops, so the disc keeps turning frame by frame: paused, a moved control draws one frame and turns the disc by one frame, and dragging a slider while paused runs the picture as fast as the drag. Step advances the clock 1/60 s.',
   'A frame here is one of the display’s refreshes (60 or 120 a second, and whenever the browser gets round to it), not Resolume’s output frame. The chain runs over each frame’s own interval in samples, so the picture rate, the lamp and the wheel do not depend on it, but which instants are drawn does, and so does the flicker a camera or a screen recording sees.',
   'WebAssembly is not the Mac’s arm64. It has no fused multiply-add, and its exp, sin and pow are musl’s, not Apple’s, so the chain’s doubles can differ from the plugin built for a Mac in the last digits. What reaches the GPU is rounded to float, as in the plugin, and then rasterised by this browser’s GPU, not the Mac’s. This page has not been compared with the plugin’s harness frame for frame.',
-  'The clip is the kit’s generated one, or your own image or video. The kit hands over premultiplied colour, and the plugin treats its input as straight colour times alpha, so over a half-transparent edge the transmitter would see it darker than it is. The page’s own clips are all opaque, which is why the kit’s shape-on-transparency clip is not among them; an image of your own with transparency would show it at its edges. The brightest colour bars are left off too: on the brightest clips the flicker starts at a longer Persistence.',
+  'The clip is the kit’s generated one, or your own image or video. The kit hands over premultiplied colour, and the plugin treats its input as straight colour times alpha, so over a half-transparent edge the transmitter would see it darker than it is. The page’s own clips are all opaque, which is why the kit’s shape-on-transparency clip is not among them; an image of your own with transparency would show it at its edges. The brightest colour bars are left off too: the brighter the picture, the more of it flickers.',
   'Lines is FF_TYPE_INTEGER in the plugin and a number field here, held to its declared 8–120. The About block (a credit line and its buttons) is declared by the plugin and left off this panel.',
-  'The photosensitivity warning at the top, the question a link with settings asks before anything is drawn, and the caution on the line under the picture are the page’s, not the plugin’s. The caution reads the plugin README’s Flashing table, measured per pixel by its harness on white, a grey, its card and Resolume’s demo clips, one setting at a time; it is not a measurement of this picture, and combinations of settings were not measured.',
+  'The photosensitivity warning at the top, the Start button nothing is drawn before, and the caution on the line under the picture are the page’s, not the plugin’s; the flicker they warn of is the plugin’s, at its own defaults, and the page keeps it. The warning and the caution read the plugin README’s Flashing table, measured per pixel by its harness on white, a grey, its card and Resolume’s demo clips, one setting at a time; they are not a measurement of this picture or of the kit’s clips, and combinations of settings were not measured.',
   'Nothing here is measured. The plugin itself has not been loaded into Resolume on any platform; oxbow, the fleet’s test host, reads its bundle and renders through it (its README’s Status). Its harness, nktest, drives the same class headlessly on a synthetic clock and reads the picture back off the pixels: the holes’ spiral to 0.008 px, the dwell’s 1/r to 2e-7, the wheel’s drift to 1e-6 of a line and its hunting to 1.2e-4, with 24 wrong models and 51 one-character mutants caught. That harness, not this page, is the reason to believe the televisor.',
 ];
 
@@ -583,7 +598,7 @@ function buildStatusLine() {
     const notes = flashNotes((id) => params.get(id));
     caution.hidden = notes.length === 0;
     caution.textContent = notes.length
-      ? `Flicker: ${notes.join('; ')}. The plugin’s README measures these one at a time (Flashing); this page does not measure its own picture. Defaults puts every control back; Pause stops the picture.`
+      ? `Flicker: ${notes.join('; ')}. These are the plugin README’s measurements, one setting at a time (Flashing); combinations were not measured, and this page does not measure its own picture. Persistence turned up calms it; Pause stops the picture.`
       : '';
   };
   params.addEventListener('change', updateCaution);
@@ -620,8 +635,10 @@ function buildStatusLine() {
 }
 
 //---------------------------------------------------------------------------
-// A link that carries settings away from the defaults: nothing is drawn
-// until the visitor has chosen, under the warning, how to open it.
+// Start: nothing is mounted, so nothing is drawn, until the visitor has
+// pressed Start under the warning. Every way in, embeds included. A link
+// that carries settings away from the defaults says what it sets, and can be
+// started at the defaults instead.
 //---------------------------------------------------------------------------
 function linkSettings() {
   const probe = new Params(PARAMS);
@@ -639,36 +656,45 @@ function describeSetting(probe, id) {
 }
 
 function gate() {
-  const { probe, away } = linkSettings();
-  if (away.length === 0) return false;
-  const box = document.getElementById('nk-gate');
+  const section = document.getElementById('photosensitivity');
   const words = document.getElementById('nk-gate-text');
-  const toDefaults = document.getElementById('nk-gate-defaults');
-  const withLink = document.getElementById('nk-gate-link');
-  if (!box || !words || !toDefaults || !withLink) return false;
+  const startButton = document.getElementById('nk-start');
+  const defaultsButton = document.getElementById('nk-start-defaults');
+  const note = document.getElementById('nk-start-note');
+  // Without the warning's own button there is no Start, and nothing starts.
+  if (!section || !startButton) return;
 
-  const notes = flashNotes((id) => probe.get(id));
-  words.textContent = `This link opens the plugin away from its defaults: ${away.map((id) => describeSetting(probe, id)).join(', ')}.`
-    + (notes.length ? ` ${notes.join('; ')}.` : ' None of these is in the range the warning names, but combinations were not measured.')
-    + ' Nothing is drawn until you choose.';
-  box.hidden = false;
+  const { probe, away } = linkSettings();
+  if (away.length && words && defaultsButton) {
+    const notes = flashNotes((id) => probe.get(id));
+    words.textContent = `This link sets ${away.map((id) => describeSetting(probe, id)).join(', ')}.`
+      + (notes.length ? ` With them: ${notes.join('; ')}.` : ' With them nothing the README measured crosses, but combinations were not measured.');
+    words.hidden = false;
+    startButton.textContent = 'I have read this. Start with the link’s settings';
+    defaultsButton.hidden = false;
+  }
+  startButton.hidden = false;
 
-  const open = (keep) => {
+  const go = (keep) => {
+    startButton.disabled = true;
+    if (defaultsButton) defaultsButton.disabled = true;
     if (!keep) {
       for (const id of away) query.delete(id);
       const url = new URL(window.location.href);
       url.search = query.toString();
       window.history.replaceState(null, '', url);
     }
-    box.hidden = true;
     start();
+    startButton.remove();
+    defaultsButton?.remove();
+    if (words) words.hidden = true;
+    section.classList.add('is-started');
+    if (note) note.textContent = 'Started. Pause, under the picture, stops it at once; Persistence turned up calms it.';
   };
-  toDefaults.addEventListener('click', () => open(false), { once: true });
-  withLink.addEventListener('click', () => open(true), { once: true });
-  toDefaults.focus({ preventScroll: true });
-  return true;
+  startButton.addEventListener('click', () => go(true), { once: true });
+  defaultsButton?.addEventListener('click', () => go(false), { once: true });
 }
 
-if (!gate()) start();
+gate();
 
 export { renderer, mounted, PARAMS, DECLARED, shaderCheck };

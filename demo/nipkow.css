@@ -1,7 +1,7 @@
 /*
  * Nipkow's own additions to the kit's page: the photosensitivity warning at
- * the top (xenon's shape), the question a link with flickering settings asks
- * first, and the line under the picture. Everything else is vendor/kit.css,
+ * the top and its Start button (xenon's shape), and the line under the
+ * picture. Everything else is vendor/kit.css,
  * unedited.
  */
 
@@ -32,10 +32,10 @@
 
 .nk-warning p { margin: 8px 0 0; max-width: 80ch; font-size: 14px; }
 
-/* ---- a link that opens away from the defaults ----------------------------- */
+/* ---- Start: nothing is drawn until it is pressed ------------------------- */
 
-.nk-gate[hidden] { display: none; }
-.nk-gate {
+.nk-gate__text[hidden] { display: none; }
+.nk-gate__text {
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px dashed #5a4613;
@@ -44,14 +44,23 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
+.nk-gate__actions .btn[hidden] { display: none; }
 .nk-gate__actions .btn {
   padding: 9px 16px;
   font-size: 14px;
   font-weight: 650;
 }
-.nk-gate__defaults { border-color: var(--warn); }
+.nk-warning__start { border-color: var(--warn); }
+.nk-gate__actions .btn:disabled { opacity: 0.6; cursor: progress; }
+
+.nk-warning__note:empty { display: none; }
+.nk-warning__note { color: #d9cfb4; }
+
+/* Started: the warning stays, smaller, so a visitor who scrolls back sees it. */
+.nk-warning.is-started { padding: 10px 14px; }
+.nk-warning.is-started p { font-size: 13px; }
 
 /* ---- the line under the picture ------------------------------------------ */
 
