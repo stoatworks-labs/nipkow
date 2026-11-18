@@ -95,6 +95,13 @@ pin="$(git -C "$REPO/external/ffgl" rev-parse --short=7 HEAD)"
 echo "ok   FFGL SDK pinned at $pin"
 
 #---------------------------------------------------------------------------
+step "Demo: the browser's copy of the shaders, its port, and the .wasm's sources"
+#---------------------------------------------------------------------------
+# demo/ runs this C++ as committed WebAssembly with its own copy of the GLSL
+# (demo/tools/check_shaders.py says what it holds them to, and why).
+python3 demo/tools/check_shaders.py || fail "the demo's copies have drifted from the plugin's: rerun demo/tools/build-wasm.sh or check_shaders.py --write"
+
+#---------------------------------------------------------------------------
 step "Build (universal, Release, fresh)"
 #---------------------------------------------------------------------------
 [[ "${KEEP_BUILD:-0}" == 1 ]] || rm -rf "$BUILD"

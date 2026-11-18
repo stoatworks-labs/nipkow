@@ -167,7 +167,20 @@ is running. macOS only.
   Arena's DXV demo clips decode to; whether Resolume hands an effect premultiplied colour has
   not been checked.
 - The defaults were measured on the demo clips through `--pipe`, not looked at in a show.
-- No user guide, no presets, no OpenFX port and no browser demo.
+- No user guide, no presets and no OpenFX port.
+
+## Browser demo
+
+[nipkow-demo.stoatworks-labs.com](https://nipkow-demo.stoatworks-labs.com/) runs the plugin in
+your browser: its own C++ (the plugin class, the lamp, the disc and the wheel in double, and
+its clock), compiled unmodified to WebAssembly and drawing with its own GLSL in WebGL2, on
+generated clips or a picture of your own. WebGL2 compiles GLSL ES 3.00, which has no `precise`,
+so the page drops the exposure pass's seven: a browser's compiler may then reassociate the
+arithmetic they protect, which works out under one 8-bit step but has not been measured. It
+needs 32-bit float render targets (`EXT_color_buffer_float`) and stops without them. The
+[photosensitivity warning](#flashing) applies there too: the page starts at the defaults, and a
+link that carries other settings asks before anything is drawn. It is a demo, not the plugin,
+and the page lists what it leaves out.
 
 ## Build
 

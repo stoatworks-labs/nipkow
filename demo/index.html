@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nipkow — browser demo | Stoatworks Labs</title>
+    <meta name="description" content="Try the Nipkow FFGL effect for Resolume in your browser: Baird's 30-line mechanical television looking at the clip, a mirror drum scanning it, a neon lamp that strikes late and glows over part of its plate when starved, a spinning disc drawing it back one hole at a time, and a phonic wheel that hunts. The plugin's own C++ compiled unmodified to WebAssembly, drawing with its own GLSL in WebGL2. Some settings flicker; it starts at the plugin's safe defaults. A demo, not the plugin." />
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./vendor/kit.css" />
+    <link rel="stylesheet" href="./nipkow.css" />
+    <link rel="canonical" href="https://nipkow-demo.stoatworks-labs.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Stoatworks Labs" />
+    <meta property="og:title" content="Nipkow — browser demo | Stoatworks Labs" />
+    <meta property="og:description" content="Try the Nipkow FFGL effect for Resolume in your browser: Baird's 30-line mechanical television looking at the clip, a mirror drum scanning it, a neon lamp that strikes late and glows over part of its plate when starved, a spinning disc drawing it back one hole at a time, and a phonic wheel that hunts. The plugin's own C++ compiled unmodified to WebAssembly, drawing with its own GLSL in WebGL2. Some settings flicker; it starts at the plugin's safe defaults. A demo, not the plugin." />
+    <meta property="og:url" content="https://nipkow-demo.stoatworks-labs.com/" />
+    <meta name="twitter:card" content="summary" />
+  </head>
+  <body>
+    <section class="nk-warning" id="photosensitivity" aria-labelledby="nk-warning-title">
+      <h2 class="nk-warning__title" id="nk-warning-title">Photosensitivity warning</h2>
+      <p>
+        <strong>Some settings make this picture flicker.</strong> Turned down,
+        <strong>Persistence</strong> at 0.5 s or less on a white source (0.15 s or less on
+        bright clips), or a <strong>Picture Rate</strong> of 4 to 7, makes the whole picture
+        flicker in saturated red more than three times a second, which can trigger seizures
+        in people with photosensitive epilepsy. <strong>Frame Fill</strong> spreads whatever
+        flickers over the whole frame.
+      </p>
+      <p>
+        The page starts at the plugin's own defaults (a link that carries other settings asks
+        first), and at those (Persistence 1 s, a flash-safety default) nothing crosses WCAG's
+        flash thresholds. If you, or anyone who
+        can see your screen, may be affected, leave Persistence and Picture Rate where they
+        are. The line under the picture warns when a setting is in or near that range;
+        <strong>Defaults</strong>, above the controls, puts every control back, and
+        <strong>Pause</strong>, under the picture, stops it at once.
+      </p>
+      <div class="nk-gate" id="nk-gate" hidden>
+        <p class="nk-gate__text" id="nk-gate-text"></p>
+        <div class="nk-gate__actions">
+          <button type="button" class="btn nk-gate__defaults" id="nk-gate-defaults">Open at the defaults</button>
+          <button type="button" class="btn" id="nk-gate-link">Open with the link's settings</button>
+        </div>
+      </div>
+    </section>
+
+    <main id="demo">
+      <noscript>
+        <h1>Nipkow</h1>
+        <p>
+          Baird's 30-line mechanical television looking at your clip, for Resolume Arena and
+          Avenue: an FFGL effect, SW Nipkow. A mirror drum explores the clip in 30 strips,
+          12½ pictures a second; the signal goes through a narrow amplifier into a neon lamp
+          that strikes after its formative lag and glows over only part of its plate when
+          starved; a disc with 30 holes on a spiral turns in front of the lamp, each hole
+          tracing one arc of the picture; and a phonic wheel whose coils carry the lamp's
+          current holds the disc in step, and hunts. Nothing in the picture is drawn.
+        </p>
+        <p>
+          This demo runs the plugin's own C++, compiled to WebAssembly, and its shaders in
+          your browser, so it needs JavaScript and WebGL2. Some of its settings flicker
+          (see the warning above); it starts at the plugin's defaults, which do not.
+        </p>
+        <ul>
+          <li><a href="https://github.com/stoatworks-labs/nipkow">Source on GitHub</a></li>
+        </ul>
+      </noscript>
+    </main>
+
+    <script type="module" src="./plugin.js"></script>
+    <script
+      src="./vendor/support-footer.js"
+      defer
+      data-app="Nipkow"
+      data-repo="https://github.com/stoatworks-labs/nipkow"
+      data-note="A browser demo of the plugin's own C++ and shaders, compiled to WebAssembly and WebGL2. Nothing you load here leaves your machine."
+    ></script>
+  </body>
+</html>

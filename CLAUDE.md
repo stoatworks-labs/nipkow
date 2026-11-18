@@ -112,6 +112,22 @@ amplifier, the lamp, the wheel), the clock, the resize or the composite. The spe
   (18 November 2026). **Persistence's default is 1 s, a flash-safety default** (README:
   Flashing): don't lower it without re-measuring the red flash per pixel.
 
+## Browser demo
+- `demo/` is served at https://nipkow-demo.stoatworks-labs.com/ by the Worker in
+  `wrangler.toml` (a route, plus a proxied AAAA `100::` record for `nipkow-demo`: delete the
+  record and the page goes dark while deploys stay green). `.github/workflows/deploy.yml`
+  redeploys it on every push to main; by hand: `cf-run npx wrangler deploy`.
+- **`demo/nipkow-core.{js,wasm}` is the plugin's C++, compiled and committed.** After ANY
+  change under `source/` (the generated `StoatworksAbout*.h` included), run
+  `demo/tools/build-wasm.sh` (emscripten's `em++`) and commit both outputs and
+  `demo/wasm/inputs.sha256`; `tools/verify.sh` fails until you do.
+- `demo/shaders.js` is a copy: after changing a shader, `python3 demo/tools/check_shaders.py
+  --write`. The same script checks the kit's ES port (only the version line, the precisions
+  and `precise` off the variables its PRECISE lists) and the .wasm's input hashes.
+- The page's photosensitivity warning, its gate for links away from the defaults and its
+  caution line are flash safety: don't weaken them (AGENTS.md, "The browser demo").
+- `demo/vendor/` is the shared kit (`stoatworks-backend/resolume-demo`); never edit it.
+
 ## Diagnostics
 
 `source/Diag.{h,cpp}`: log file only, no crash handler (this runs inside Resolume).

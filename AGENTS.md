@@ -235,7 +235,7 @@ the neon's chromaticity (a spectral lamp's) and its mapping into sRGB; M = 4 sam
 element; Speed +0.5%. (Persistence's 1 s is a flash-safety default, above.)
 
 Not done: loading it into Resolume on any platform; a Windows build; a user guide, presets,
-an OpenFX port, a browser demo; looking at the demo clips in a show rather than as numbers.
+an OpenFX port; looking at the demo clips in a show rather than as numbers.
 
 ## Would this hold on another rasteriser, at another raster?
 
@@ -334,6 +334,59 @@ the motor), and Framing does nothing under Sync Free beyond where the drift star
 the weakest at 0.44 (the drum and the disc differ by the bow of the lines, under 2 line
 pitches), then Speed at 0.51 and Persistence at 0.78. Scanner and Speed read lower than at
 the old 0.1 s Persistence (0.51 and 2.62 then): the 1 s screen averages the picture's changes.
+
+## The browser demo (2026-11-18)
+
+https://nipkow-demo.stoatworks-labs.com/, from `demo/`, deployed by `wrangler.toml` (a Worker
+route: the zone is at Cloudflare's 100 custom domains, so `nipkow-demo` is a proxied AAAA
+`100::` record made through the API) and `.github/workflows/deploy.yml` on every push to main.
+
+- **It runs the plugin, it doesn't port it.** `demo/nipkow-core.wasm` is `Nipkow.cpp` and
+  everything it calls (Controls, Apparatus, Shaders, PassBuffer, Diag) plus the FFGL SDK's
+  plugin classes, FFGLShader and FFGLFBO, compiled unmodified by emscripten
+  (`demo/tools/build-wasm.sh`, fountain's pattern). Left out: `EffectPlugin.cpp`.
+- **What is the page's**: `demo/wasm/glue.cpp` plays the host (constructs the plugin, reads its
+  declarations back through the SDK, forwards SetFloatParameter, SetTime and ProcessOpenGL as
+  nktest's Rig does, and reads the state `--stats` prints for the line under the picture);
+  `demo/wasm/gl_shim.cpp` takes six GL calls: glShaderSource (below); glEnable, glDisable and
+  glIsEnabled for GL_PROGRAM_POINT_SIZE, which WebGL2 lacks; glTexImage2D, because the SDK
+  allocates R32F with GL_RGBA and no data and WebGL2 takes only GL_RED for R32F; glReadPixels,
+  because the table's GL_RED/GL_FLOAT read-back may not be the browser's read format (it then
+  reads RGBA/FLOAT and copies red, the same values). Chrome on this Mac, GPU and SwiftShader,
+  reads RED/FLOAT; the RGBA path was run by forcing it. All of it needs EXT_color_buffer_float;
+  without it the page stops and says why (no 8-bit path).
+- **The ES port is a checked, mechanical transform, at load time.** glShaderSource refuses any
+  text that isn't byte for byte the page's assembly of `demo/shaders.js`, then applies the
+  demo kit's `port()` and checks its output: `#version 410 core` (and the blank line after it,
+  which port()'s pattern takes) becomes `#version 300 es`, the ES highp precision defaults go
+  in front, and `precise ` comes off exactly the declarations `PRECISE` lists (rel, rlo, rhi,
+  da, db, ua, ub). Anything else refuses the stage. `demo/tools/check_shaders.py` (in
+  `tools/verify.sh`) checks the same on every stage at verify time, against a Python mirror of
+  port() pinned by the hash of port()'s text in the vendored `gl.js`.
+- **What dropping `precise` may cost** (traps 2 and 3): a compiler that reassociates
+  `rlo = max( rel - hr, -0.5 )` back into terms of r rounds the radial overlap at r ≈ 350
+  holes, 3e-5 of a hole, against an overlap of 2hr (about 0.1 hole at 720p, 0.07 at 1080p):
+  under 1e-3 of a pixel's light; and one that turns (u − start) + rest into (u + rest) − start
+  loses the remainder, 2e-6 of a line, 5e-4 of a sample. Both under one 8-bit step by that
+  arithmetic; neither measured. A new `precise` in Shaders.cpp fails check_shaders.py until it
+  is added to PRECISE, here and to the page's list.
+- **Flash safety, the page's side.** The warning is the first thing on the page (index.html),
+  in the README's words. The page starts at the defaults: a URL that carries any control away
+  from its default (Copy link writes one) mounts nothing until the visitor chooses "Open at the
+  defaults" (the settings are stripped from the URL) or "Open with the link's settings". Embeds
+  are gated the same way, deliberately: a link that flickers on opening is worse than a click
+  in an OBS source. No control is clamped. A caution line under the picture names a setting in
+  or beside the README's flickering range (Persistence under 0.6 s, Picture Rate 3 to 8, Lamp
+  over 20 mA, Frame Fill with any of them); it reads the table, it measures nothing. Clips: the
+  dusk scene first, and not the 100% bars or the alpha clip.
+- **Checked on the page** (headless Chrome, GPU and SwiftShader, 960x540): all eight stages
+  accepted, `precise` off the seven, the read-outs in the plugin's units, Lines 30 → 60
+  changes the picture, the gate (shown, nothing drawn, both answers), the caution, the RGBA
+  read-back path. Chrome logs "GPU stall due to ReadPixels" warnings: that is the table's
+  per-frame read-back, which is the plugin's design. Not compared with nktest frame for frame.
+- **Rebuild after any change under `source/`**, the generated `StoatworksAbout*.h` included:
+  `demo/tools/build-wasm.sh`, then commit both outputs and `demo/wasm/inputs.sha256`;
+  verify fails until you do.
 
 ## Open questions
 
