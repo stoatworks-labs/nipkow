@@ -56,19 +56,15 @@ ControlInfo option( unsigned int id, const char* name, const char* group, int va
 // of its picture's samples. Measured 2026-11-16: 9.92 to 10.001 mA over the 33
 // clips (at least 1% of every clip's strip is black, and black is lit only
 // above I_s = 10 mA), the median 10.001 mA -> 10.1 mA. Speed +0.5% is chosen:
-// a motor set close by hand, not exactly.
+// a motor set close by hand, not exactly. Persistence 0.1 s is chosen for the
+// look: about one picture.
 //
-// Persistence 1 s, the range's top, is a flash-safety default. It was 0.1 s
-// (chosen for the look: about one picture), and at 0.1 s every lit point of
-// the field swings by about half its light 12 1/2 times a second: in the neon's
-// saturated red that crosses WCAG 2.x's red-flash threshold (a change of more
-// than 20 in 320 x max( 0, R - G - B ), linear light) at every pixel of the
-// field, 64-70% of the worst ten-degree window on bright clips and on white
-// (measured 2026-11-18, per pixel, at 640x360, 60 fps). At 1 s the defaults
-// cross it nowhere on any source measured, and no Lamp current takes the area
-// that crosses past a quarter of a ten-degree window (30 mA on white: 15%).
-// Lower Persistence, or a Picture Rate near 5, brings it back (README:
-// Flashing).
+// It flickers, on purpose. At 0.1 s every lit point of the field swings by
+// about half its light 12 1/2 times a second, and in the neon's saturated red
+// that crosses WCAG 2.x's red-flash threshold per pixel over most of the field
+// on bright clips (README: Flashing, measured 2026-11-18). The release kept the
+// default and warns instead (Allan, 2026-11-18: "flashes are fine, but let's
+// put a warning in the videos and descriptions"); Persistence at 1 s calms it.
 //---------------------------------------------------------------------------
 const double kDefaultLamp = 10.1;
 

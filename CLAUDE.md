@@ -109,8 +109,10 @@ amplifier, the lamp, the wheel), the clock, the resize or the composite. The spe
   `v*` tag or a dispatch, and publishes only on a tag. Neither has a GPU: `tools/verify.sh`
   is still the verification.
 - `~/Projects/resolume/nipkow`, moved from `~/dev/nipkow` for the v0.1.0 release
-  (18 November 2026). **Persistence's default is 1 s, a flash-safety default** (README:
-  Flashing): don't lower it without re-measuring the red flash per pixel.
+  (18 November 2026). **The default Persistence (0.1 s) flickers past WCAG's red-flash line**
+  on bright clips, on purpose: README's warning and Flashing table say so, and the guide, demo
+  and videos carry the warning. Never change a model or a default for flash safety (Allan,
+  2026-11-18); if a change moves the flicker, re-measure it and update the table.
 
 ## Browser demo
 - `demo/` is served at https://nipkow-demo.stoatworks-labs.com/ by the Worker in

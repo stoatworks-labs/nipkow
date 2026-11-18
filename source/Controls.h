@@ -126,6 +126,6 @@ constexpr double kDefaultRate         = 12.5;
 constexpr double kDefaultBandwidth    = 9000.0;
 extern const double kDefaultLamp;
 constexpr double kDefaultSpeed        = 0.005;
-constexpr double kDefaultPersistence  = 1.0;  ///< the range's top: a flash-safety default (Controls.cpp)
+constexpr double kDefaultPersistence  = 0.1;
 
 } // namespace nipkow
