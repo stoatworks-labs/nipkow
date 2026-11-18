@@ -102,10 +102,15 @@ amplifier, the lamp, the wheel), the clock, the resize or the composite. The spe
 - **Provisional hand copies:** `source/StoatworksAbout*.h` (guide = "", no user guide) and
   `ATTRIBUTIONS.md`. Once the project is registered in stoatworks-backend, `sync-about.py`
   and `sync-attributions.py` generate them; edit them there then.
-- **No workflows, and none to add**: the repo has no remote and may stay private; GitHub
-  Actions are for public repos only. `tools/verify.sh` is the whole of the verification.
-- Local only: `~/dev/nipkow`, no remote, nothing released, not on the website, never loaded
-  into Resolume. No Windows build has been tried.
+- **Workflows** (the repo is public, `stoatworks-labs/nipkow`): `ci.yml` builds on macOS
+  (arm64, `nktest --list` and `--offline`, glslc) and Windows on every push and pull request;
+  `release.yml` builds the universal bundle and the x64 DLL (checked by `tools/wincheck.ps1`,
+  whose `-Params` is the control table plus the About block and changes with either) on a
+  `v*` tag or a dispatch, and publishes only on a tag. Neither has a GPU: `tools/verify.sh`
+  is still the verification.
+- `~/Projects/resolume/nipkow`, moved from `~/dev/nipkow` for the v0.1.0 release
+  (18 November 2026). **Persistence's default is 1 s, a flash-safety default** (README:
+  Flashing): don't lower it without re-measuring the red flash per pixel.
 
 ## Diagnostics
 
