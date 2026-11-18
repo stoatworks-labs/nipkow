@@ -73,9 +73,27 @@ Neighbours not duplicated: `old-cathode` (an electronic signal path and a CRT), 
   1% black, and black is lit only above 10 mA), up to the next 0.1 mA; the reference pull
   C_ref **0.9 mA²**, the median clip's mean C at that Lamp (0.00 to 29.3 mA²; the Baird frame's
   strip is black in eight clips; Ethnik2 the median at 0.91). The rest of the defaults are the
-  standard (30 lines, 12½ pictures, the drum, 9 kHz) or chosen (Speed +0.5%, Persistence 0.1 s).
-- **No OpenFX port, no browser demo, no user guide, no presets, no Windows build tried, no
-  workflows** (no remote; Actions are for public repos only).
+  standard (30 lines, 12½ pictures, the drum, 9 kHz) or chosen (Speed +0.5%). Persistence was
+  0.1 s, chosen for the look; for the release it is **1 s, a flash-safety default** (below).
+- **No OpenFX port and no presets.** CI and release workflows (xenon's) since the repo went
+  public for v0.1.0.
+
+## Flash safety: why Persistence defaults to 1 s
+
+Measured 2026-11-18 with `nktest --pipe` (640×360, 60 fps, 6 s) per pixel: each pixel's own
+red-flash transitions (WCAG 2.x: 320 × max(0, R − G − B) in linear light moving by more than
+20, a saturated red at the brighter end) and general ones (relative luminance 0.1, the darker
+end below 0.8), then the share of the worst ten-degree window (a third of the frame each way,
+stepped by a sixth) flashing more than three times in the same one-second span. At the old
+0.1 s every lit pixel of the field crossed the red threshold 12½ times a second: **69.8%** of
+the worst window on white, **63.9%** on NoHopeJustFear_44 (the brightest demo clip), 62.1% on
+Metalive 01, 49.8% on the card, 38.6% on IntoTheGlow_02. The fleet's window-mean measure
+(flashcheck.py's, the brief's) averages the rolling scan out and read 3.0 at most, which is
+why it is not the measure that decided this. The swing is about R × (1 − e^(−T/τ)): white
+needs τ ≳ 0.55 s at 12½ pictures (0.5 fails, 0.6 passes), the brightest clip τ ≳ 0.2 s.
+At **1 s** the defaults read 0% on every source; Lamp 30 mA on white 14.7%; Picture Rate 4–7
+on white 47–70% (3: 24.8%); everything else 0%. The general threshold is crossed nowhere at
+1 s. Rows: the release session's scratch sweep, summarised in README's Flashing table.
 
 ## Changes from the spec's first draft
 
@@ -214,7 +232,7 @@ The claims and their tolerances (each from first principles, never fitted to thi
 Assumed or chosen, not measured: the single-pole amplifier; R = 10 kΩ (I_strike 3 mA); the
 formative lag from indicator lamps; τ_m = 1 s and f_h = 1.5 Hz; the glow's centred rectangle;
 the neon's chromaticity (a spectral lamp's) and its mapping into sRGB; M = 4 samples an
-element; Persistence 0.1 s; Speed +0.5%.
+element; Speed +0.5%. (Persistence's 1 s is a flash-safety default, above.)
 
 Not done: loading it into Resolume on any platform; a Windows build; a user guide, presets,
 an OpenFX port, a browser demo; looking at the demo clips in a show rather than as numbers.
@@ -310,11 +328,12 @@ high + low (`--slip`); the clock-unit fallback upside down (`--clock`).
 `python3 tools/sweep.py`: all 11 controls change the picture (120 frames at 320×180 on the
 card), each in a context where it acts; only Speed has one (Sync Free). `--bare` (the context
 table emptied) also finds nothing dead: under the default Hunting, Speed's two ends (±3%) move
-the wheel's lock, or slip it, enough to change the picture (mean 8-bit delta 2.62, the same as
-with Sync Free). **Speed is dead under Sync Locked, by design** (the ideal synchroniser ignores
+the wheel's lock, or slip it, enough to change the picture (mean 8-bit delta 0.87; 0.51 with
+Sync Free). **Speed is dead under Sync Locked, by design** (the ideal synchroniser ignores
 the motor), and Framing does nothing under Sync Free beyond where the drift starts. Scanner is
-the weakest at 0.51 (the drum and the disc differ by the bow of the lines, under 2 line
-pitches), Persistence next at 0.78.
+the weakest at 0.44 (the drum and the disc differ by the bow of the lines, under 2 line
+pitches), then Speed at 0.51 and Persistence at 0.78. Scanner and Speed read lower than at
+the old 0.1 s Persistence (0.51 and 2.62 then): the 1 s screen averages the picture's changes.
 
 ## Open questions
 

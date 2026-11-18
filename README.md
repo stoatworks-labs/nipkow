@@ -29,7 +29,13 @@ circles; the picture is taller and dimmer on its outer side, because a straight 
 drum becomes an arc as long as its radius and an outer hole dwells less on each point; edges
 smear upwards along the lines, the same angle on every line; a lamp starved of current glows
 over only part of its plate; a dark picture holds the wheel weakly, so it swings and slips;
-and every point flickers at 12½ Hz because it is lit once a picture.
+and every point is lit once a picture, so it flickers at 12½ Hz as the screen lets its light
+go: faintly at the default Persistence, hard when you turn it down.
+
+> **Photosensitivity warning.** Turned down, **Persistence** (below about half a second) or a
+> **Picture Rate of 4 to 7** makes the whole picture flicker in saturated red, more than three
+> times a second, which can trigger seizures in people with photosensitive epilepsy. The
+> defaults stay under WCAG's flash thresholds. See [Flashing](#flashing).
 
 ## Controls
 
@@ -41,7 +47,8 @@ and every point flickers at 12½ Hz because it is lit once a picture.
 | **Look** | Persistence (how long the screen holds its light, 20 ms–1 s), Frame (Baird: the 7:3 field, the whole sector fitted to the height; Fill: stretched to the frame), Mix. |
 
 The defaults are the 30-line standard (30 lines, 12½ pictures, the drum, 9 kHz), Sync
-Hunting with the motor 0.5% fast, Persistence 0.1 s and the Baird frame. **The Lamp's 10.1 mA
+Hunting with the motor 0.5% fast, Persistence 1 s (a flash-safety default: see
+[Flashing](#flashing)) and the Baird frame. **The Lamp's 10.1 mA
 was set from Resolume's own demo clips**: the lowest standing current at which the median
 clip (of all 33) keeps the lamp lit over 99% of its picture. Below 10 mA black puts the lamp
 out (the drive reaches zero), and it strikes again a formative lag later; the wheel's
@@ -50,14 +57,49 @@ reference pull was set from the same clips.
 Over a transparent part of a clip the transmitter sees black; the receiver paints the whole
 frame, so the output is opaque at Mix 1.
 
+## Flashing
+
+A televisor lights its picture one point at a time, each point once a picture, and Baird's
+flickered for exactly that reason. Here the screen holds its light for **Persistence**, so
+every lit point swings by about (1 − e^(−T/Persistence)) of its light once a picture of T
+seconds. In the neon's saturated red, WCAG 2.x counts a swing of more than 20 on its red
+scale (320 × (R − G − B), in linear light) as half a flash, so a short Persistence puts the
+whole field over the line of three flashes a second.
+
+**The default Persistence is 1 s, the control's top, for that reason.** While the plugin was
+built it was 0.1 s, about one picture, chosen for the look; at 0.1 s every lit pixel of the
+field crossed WCAG's red-flash threshold, over **64–70%** of the worst ten-degree window on
+Resolume's brightest demo clips and on white. At 1 s the flicker is a few per cent of the
+light and the defaults cross nothing. The settings that flicker are still there:
+
+| Setting (everything else at the defaults) | Share of the worst ten-degree window over 3 red flashes a second |
+| --- | --- |
+| The defaults: on white, a flat 25% grey, the harness's card, and five of Resolume's demo clips from the brightest to the darkest | **0%** |
+| Lamp 15, 20 or 30 mA, on white | 0%, 0%, 15% |
+| Frame Fill; Sync Locked or Free (Speed +5%); Lines 8 or 120; Picture Rate 2, 3, 8, 20 or 30 | 0% (Rate 3 on white: 24.8%, just under) |
+| **Picture Rate 4 to 7**, on white | **47–70%** |
+| **Persistence 0.5 s or less**, on white | **69–70%** |
+| **Persistence 0.15 s or less**, on the brightest demo clip | **26–69%** |
+
+WCAG fails a flash over a quarter of that window. On the general (luminance) threshold
+nothing at Persistence 1 s crosses; at 0.1 s, Picture Rate 5 or 8 and Lamp 20 mA do on white,
+as does Persistence 0.05 s or less (0.02 s on the brightest clip). **Frame Fill** spreads the field over the
+whole frame, so whatever flickers there flickers everywhere.
+
+Measured with `nktest --pipe`, 6 s at 640×360 and 60 fps, two ways: each pixel's own
+series, counting the flashes in every one-second span and the share of each window (a
+third of the frame each way) that flashes more than three times in the same span; and the
+fleet's video check, the mean of the frame and of each such window, under which the
+defaults read 0.5 flashes a second at most and the old 0.1 s read 3.0 on white.
+
 ## Status
 
-**v0.1.0, local only, 16 November 2026. Never loaded into Resolume.**
+**v0.1.0, released 18 November 2026. Not yet loaded into Resolume.**
 
 ### Measured offline, on macOS
 
 `tools/verify.sh` passes on this machine (Apple Silicon, macOS 26) against a fresh universal
-Release build (16 November 2026). Every picture check runs at **two rasters**, 1280×720 and
+Release build (16 November 2026, and again on 18 November at the 1 s Persistence default). Every picture check runs at **two rasters**, 1280×720 and
 320×180, and again on **Apple's software renderer** at 320×180. The numbers below are from
 `nktest --all` on the same code (an arm64 build); where two are given, the first is 1280×720.
 
@@ -85,32 +127,42 @@ Release build (16 November 2026). Every picture check runs at **two rasters**, 1
 | shaders | all 5 compile through `glslc`, not merely through Apple's driver |
 | the bundle | universal (`x86_64 arm64`), exports `plugMain`, ad-hoc signs; `oxbow` reads `SW Nipkow` / `NK01` / `effect` and renders through it |
 
-Render cost, from verify.sh's final run on 16 November 2026 with other builds sharing the
-machine, at the defaults over the harness's card: GPU time **0.42 ms** a frame at 720p (worst
-1.06) and **0.84 ms** at 1080p (worst 1.63); the CPU's time in `ProcessOpenGL` (the signal
-chain, and the table's read-back, which waits for the GPU) **0.45 ms** and **0.73 ms** (worst
-0.85 and 1.20). One 4K run: 3.05 ms GPU, 2.52 ms CPU. The previous run on the same machine
-read 0.72 and 0.85 ms GPU: the medians move with what else is running. macOS only.
+Render cost, from verify.sh's run on 18 November 2026 (at the 1 s Persistence default) with
+other builds sharing the machine, at the defaults over the harness's card: GPU time
+**0.41 ms** a frame at 720p (worst 0.54) and **0.82 ms** at 1080p (worst 0.96); the CPU's time
+in `ProcessOpenGL` (the signal chain, and the table's read-back, which waits for the GPU)
+**0.42 ms** and **0.72 ms** (worst 0.55 and 0.82). At 4K: 2.93 ms GPU, 2.50 ms CPU. Earlier
+runs on the same machine read 0.72 to 0.87 ms GPU at 1080p: the medians move with what else
+is running. macOS only.
 
 ### Not established
 
 - **No host has loaded it.** Not Arena, not Avenue, on any platform. `oxbow` (the fleet's test
   host) reads the bundle and renders through it, which is all.
-- **Windows** has never been built, and there is no CI.
+- **Windows** is built by CI and the release workflow, but no picture has been checked there.
 - **Chosen, not measured:** the amplifier as one pole (no period response curve was found);
   the output stage's 10 kΩ (so the lamp strikes above 3 mA); the wheel's hunting frequency
   (1.5 Hz at the reference pull) and the motor's 1 s time constant; where on the plate a
   starved glow sits (centred); the neon's colour (a spectral lamp's chromaticity, brought
-  into sRGB at constant luminance); four samples a picture element; Persistence's 0.1 s.
+  into sRGB at constant luminance); four samples a picture element. Persistence's 1 s is
+  a flash-safety default, not a measurement: see [Flashing](#flashing).
 - **The formative lag** is an indicator lamp's (GE, Signalite), not a television lamp's.
 - **Left out:** the eye, the amplifier's low-frequency cut and peaking, the statistical
   striking lag, the wheel's impulse shape and the motor's torque ripple, the graduated end
   holes, the radio path.
 - **Bright, varied pictures can keep the wheel hunting.** The pull grows with the square of
-  the lamp's current; on the harness's card at Lamp 9 mA and Speed +1% the wheel's own
+  the lamp's current, with no limit (a real wheel's iron would saturate; nothing here does);
+  on the harness's card at Lamp 9 mA and Speed +1% the wheel's own
   frequency comes near half the picture rate, the picture's pull pattern excites it, and it
   never settles. At the defaults on the same card it locks. This follows from the model;
   whether a Televisor did it is not known.
+- **The default Lamp leaves black only just lit.** At 10.1 mA, black drives the lamp 0.1 mA
+  above the point where it goes out, so black is a faint glow over part of the plate; a Lamp
+  a notch lower puts black out, and the lamp then strikes again a formative lag after every
+  return from black. The default was measured from the demo clips (above); whether it is the
+  right one for a show is open.
+- **Whether the Fill frame is wanted** is open. It stretches the 7:3 field to the whole frame,
+  which no televisor did, and anything that flickers then flickers everywhere.
 - **Resolume's alpha.** The plugin treats a clip's colour as straight alpha, which is what
   Arena's DXV demo clips decode to; whether Resolume hands an effect premultiplied colour has
   not been checked.
@@ -150,7 +202,9 @@ That's the whole lot: shader hygiene and `glslc`, a fresh universal build with n
 the bundle's architecture, plist and ad-hoc signature, a host's view of it through `oxbow`
 (required), every check at two rasters and again on the software renderer, the alpha check on
 Arena's demo clips (required), the pipe, the negative controls, the mutants, the sweep for
-dead controls and the render cost. There is no CI: this script is the verification.
+dead controls and the render cost. CI (`.github/workflows/ci.yml`) builds on macOS and
+Windows and runs only what needs no GPU (`nktest --offline` and `glslc`): this script is the
+verification.
 `CLAUDE.md` lists the checks one by one; `./build/nktest --all` runs them all.
 
 Render a frame of your own:
