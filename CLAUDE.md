@@ -22,7 +22,9 @@ amplifier, the lamp, the wheel), the clock, the resize or the composite. The spe
 - Fast dev build: add `-DCMAKE_OSX_ARCHITECTURES=arm64`
 - Build: `cmake --build build -j8`
 - Install to Resolume: `cmake --install build` (into Arena's Extra Effects).
-  Never from a shared session on this Mac: nothing here has been loaded into Arena.
+  Never from a shared session on this Mac: Allan's Arena may be running. The release's check
+  (2026-11-18) ran only with Arena closed, installed the CI bundle, probed it over REST on a
+  layer added on top of the show, quit without saving and moved the bundle out again.
 - Render offline: `./build/nktest --out /tmp/n.png` (the defaults over the harness's card,
   120 frames in at 60 fps)
 - A clip of your own: `--clip clip.rgba` (raw RGBA at `--size`, top row first)

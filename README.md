@@ -1,8 +1,9 @@
 # nipkow
 
 > **AI-assisted project.** This codebase was created with [Claude](https://claude.com/claude-code)
-> (Anthropic), directed and reviewed by a human author. **It has never been loaded into
-> Resolume.** What's established is established by an offline harness, `nktest`, that drives
+> (Anthropic), directed and reviewed by a human author. It has run in Resolume Arena on a Mac
+> and on Windows, over a still test card ([In Resolume](#in-resolume)), but never through a
+> show. What's measured is measured by an offline harness, `nktest`, that drives
 > the real plugin class through the same `ProcessOpenGL` a host calls, in a headless GL
 > context on a synthetic clock, on this Mac's GPU at two rasters and on Apple's software
 > renderer. Read off the picture, each scanned line sits at the spiral's radius to within
@@ -102,7 +103,8 @@ understates what an eye sees across the field.
 
 ## Status
 
-**v0.1.0, released 18 November 2026. Not yet loaded into Resolume.**
+**v0.1.0, released 18 November 2026.** A [user guide](https://stoatworks-labs.com/software/nipkow/guide/)
+covers every control, the flashing and the known limits.
 
 ### Measured offline, on macOS
 
@@ -142,11 +144,54 @@ table's read-back, which waits for the GPU) **0.45 ms** and **0.76 ms** (worst 0
 At 4K: 3.17 ms GPU, 2.65 ms CPU. Other runs on the same machine read 0.72 to 0.87 ms GPU at
 1080p: the medians move with what else is running. macOS only.
 
+### In Resolume
+
+**In Arena on macOS** (7.29.0, Apple Silicon, 18 November 2026, the release workflow's
+universal build): it loads and lists SW Nipkow with Arena's Opacity and all 16 controls,
+defaults and option names as declared; the About line reads "Nipkow v0.1.0 - MIT - Stoatworks
+Labs, stoatworks-labs.com". Over a still of the harness's card on a layer added on top of a
+show, read from Arena's composition monitor as the mean difference in 8-bit levels over the
+middle of the frame:
+
+| step | difference |
+| --- | --- |
+| the bare still, twice | 0.0 |
+| SW Nipkow added at its defaults | 81.9 |
+| the defaults, a second apart (the flicker and the hunting wheel) | 1.5–1.7 |
+| Sync Locked and Persistence 1 s, a second apart | 0.09 |
+| Lines 8 → 120 | 14.8 |
+| Picture Rate 2 → 30 a second | 1.9 |
+| Scanner Drum → Disc | 1.3 |
+| Bandwidth 0.5 → 40 kHz | 4.5 |
+| Lamp 6 → 24 mA | 20.9 |
+| Framing −½ → +½ line | 8.2 |
+| Frame Baird → Fill | 24.2 |
+| Persistence 20 ms → 1 s | 4.5 |
+| Mix 0 → 1 | 81.9 |
+| Mix 0 against the bare still | 0.0 |
+| Sync Free, Speed 0, 2 s apart | 0.10 |
+| Sync Free, Speed +1%, 2 s apart (the picture drifts) | 2.25 |
+
+Each control was read in the calm context (Sync Locked, Persistence 1 s), Persistence itself
+under Sync Locked and Speed under Free. The four About buttons weren't pressed (they open a
+browser).
+
+**In Arena on Windows** (7.27.1 on win-lab, Mesa llvmpipe software rendering, 18 November
+2026): the fleet's gate ran the release workflow's own Windows build of the registered tree.
+The DLL loads and registers (`NK01`, an effect); all 17 controls (Nipkow's 16 and Arena's
+Opacity) match their declared names, order, types, ranges and defaults; it renders (83.4
+levels from its bare input at the defaults); Arena's log stays clean: 9 passed, 0 failed, 0
+skipped. Nine of the eleven valued controls changed Arena's picture, read from its clip
+thumbnail and held under Sync Locked with Persistence 1 s where the hunting wheel and the
+flicker would move it between grabs (plugin-bench's `arena/expect/nipkow.json`); Speed and
+Persistence read inconclusive there (under Free the drift moves the floor's own grabs too),
+and both changed the picture on the Mac.
+
 ### Not established
 
-- **No host has loaded it.** Not Arena, not Avenue, on any platform. `oxbow` (the fleet's test
-  host) reads the bundle and renders through it, which is all.
-- **Windows** is built by CI and the release workflow, but no picture has been checked there.
+- **Not through a show.** Arena has run it over a still test card only; Avenue never.
+  Nothing has been timed inside Resolume.
+- **Windows on a GPU.** Only software rendering (win-lab's llvmpipe) has been seen.
 - **Chosen, not measured:** the amplifier as one pole (no period response curve was found);
   the output stage's 10 kΩ (so the lamp strikes above 3 mA); the wheel's hunting frequency
   (1.5 Hz at the reference pull) and the motor's 1 s time constant; where on the plate a
@@ -174,7 +219,7 @@ At 4K: 3.17 ms GPU, 2.65 ms CPU. Other runs on the same machine read 0.72 to 0.8
   Arena's DXV demo clips decode to; whether Resolume hands an effect premultiplied colour has
   not been checked.
 - The defaults were measured on the demo clips through `--pipe`, not looked at in a show.
-- No user guide, no presets and no OpenFX port.
+- No presets and no OpenFX port.
 
 ## Browser demo
 

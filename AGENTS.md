@@ -240,8 +240,19 @@ formative lag from indicator lamps; τ_m = 1 s and f_h = 1.5 Hz; the glow's cent
 the neon's chromaticity (a spectral lamp's) and its mapping into sRGB; M = 4 samples an
 element; Persistence 0.1 s (which flickers: above); Speed +0.5%.
 
-Not done: loading it into Resolume on any platform; a Windows build; a user guide, presets,
-an OpenFX port; looking at the demo clips in a show rather than as numbers.
+In Resolume (2026-11-18, the release): Arena 7.29.0 on this Mac loaded the release workflow's
+universal build, listed all 16 controls with Arena's Opacity as declared, and every control
+changed the composition monitor over a still card held calm (Sync Locked, Persistence 1 s:
+0.09 levels a second apart; Scanner the weakest at 1.3, Picture Rate 1.9); Mix 0 matched the
+bare still exactly; Free drifted at Speed +1% and held at 0. At the defaults a second apart
+reads 1.5–1.7 levels: the flicker and the hunting wheel. Arena 7.27.1 on win-lab (llvmpipe), the
+fleet's gate on the release workflow's own DLL: 9 passed, 0 failed, 0 skipped; all 17 controls
+as declared; 10 live (Opacity and 9 of Nipkow's 11, held under Sync Locked and Persistence
+1 s: plugin-bench 6ed7b21), Speed and Persistence inconclusive (Free's drift moves the floor's
+own grabs; Persistence barely changes a still's mean).
+
+Not done: a show; presets; an OpenFX port; looking at the demo clips in a show rather than as
+numbers.
 
 ## Would this hold on another rasteriser, at another raster?
 
