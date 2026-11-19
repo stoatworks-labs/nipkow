@@ -70,6 +70,15 @@ The Windows builds are unsigned, so SmartScreen warns once.
 
 <!-- downloads:end -->
 
+## Video
+
+> **Photosensitivity warning:** this effect flickers on purpose, as a Baird televisor did: at its
+> defaults the picture flickers in saturated red 12½ times a second, and some settings flash
+> harder. Large-area flashes in the video are kept to three a second or fewer, though single
+> points still flicker 12 to 13 times a second, as a televisor's did.
+
+[![Nipkow: Baird's 30-line television looking at your clip, for Resolume](docs/video-thumb.png)](https://www.youtube.com/watch?v=JD873H7JQec)
+
 ## Controls
 
 | Group | |
